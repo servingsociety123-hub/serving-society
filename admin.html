@@ -3,437 +3,1233 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Dashboard | Serving Society</title>
+  <title>Admin CMS | Serving Society</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="/supabase-config.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --purple: #5E2D6E; --purple-dark: #4A2356; --purple-light: #F4ECF7;
+      --lime: #C6DA02; --white: #fff; --off-white: #F7F5F2;
+      --grey-100: #F2F2F2; --grey-200: #E5E5E5; --grey-300: #CCC;
+      --grey-500: #7A7A7A; --grey-700: #3A3A3A; --text: #1D1D1B;
+      --radius: 8px; --shadow: 0 2px 12px rgba(0,0,0,.08);
+    }
+    body { font-family: 'Public Sans', system-ui, sans-serif; background: #f0edf3; color: var(--text); min-height: 100vh; }
+    a { color: var(--purple); text-decoration: none; }
+    img { max-width: 100%; display: block; }
+
+    /* ── Layout ── */
+    .cms-wrap { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .cms-sidebar {
+      width: 240px; flex-shrink: 0;
+      background: var(--purple-dark);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0;
+      z-index: 100; overflow-y: auto;
+    }
+    .cms-logo {
+      padding: 24px 20px 20px;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+    .cms-logo img { height: 48px; background: white; border-radius: 6px; padding: 6px 10px; }
+    .cms-logo-label { color: rgba(255,255,255,.5); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; margin-top: 10px; }
+
+    .cms-nav { padding: 16px 12px; flex: 1; }
+    .cms-nav-btn {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 11px 14px;
+      background: transparent; border: none;
+      border-radius: var(--radius); cursor: pointer;
+      font-family: inherit; font-size: .9rem; font-weight: 500;
+      color: rgba(255,255,255,.7);
+      transition: background .2s, color .2s;
+      margin-bottom: 2px; text-align: left;
+    }
+    .cms-nav-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .cms-nav-btn:hover { background: rgba(255,255,255,.1); color: #fff; }
+    .cms-nav-btn.active { background: var(--lime); color: var(--purple-dark); font-weight: 700; }
+    .cms-nav-divider { border: none; border-top: 1px solid rgba(255,255,255,.1); margin: 12px 0; }
+
+    .cms-sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid rgba(255,255,255,.1);
+    }
+    .cms-site-link {
+      display: block; text-align: center; padding: 10px;
+      background: rgba(255,255,255,.1); border-radius: var(--radius);
+      color: rgba(255,255,255,.8); font-size: .82rem; font-weight: 600;
+      transition: background .2s;
+    }
+    .cms-site-link:hover { background: rgba(255,255,255,.2); color: #fff; }
+
+    /* ── Main ── */
+    .cms-main { margin-left: 240px; flex: 1; min-width: 0; }
+
+    .cms-topbar {
+      background: var(--white); border-bottom: 1px solid var(--grey-200);
+      padding: 0 32px; height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+      box-shadow: var(--shadow);
+    }
+    .cms-topbar-title { font-size: 1.1rem; font-weight: 700; color: var(--purple); }
+    .cms-badge-testing {
+      background: #FFF3CD; color: #856404;
+      font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; padding: 4px 12px;
+      border-radius: 100px; border: 1px solid #FFEAA7;
+    }
+
+    .cms-content { padding: 32px; }
+
+    /* ── Panels ── */
+    .cms-panel { display: none; }
+    .cms-panel.active { display: block; }
+
+    .cms-panel-heading {
+      font-size: 1.3rem; font-weight: 700; color: var(--purple);
+      margin-bottom: 6px;
+    }
+    .cms-panel-sub { color: var(--grey-500); font-size: .9rem; margin-bottom: 24px; }
+
+    /* ── Cards ── */
+    .cms-card {
+      background: var(--white); border-radius: var(--radius);
+      box-shadow: var(--shadow); border: 1px solid var(--grey-200);
+      padding: 24px; margin-bottom: 20px;
+    }
+    .cms-card-title {
+      font-size: 1rem; font-weight: 700; color: var(--text);
+      margin-bottom: 16px; padding-bottom: 12px;
+      border-bottom: 2px solid var(--grey-100);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ── Page Selector ── */
+    .page-selector-row {
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .page-selector-row label { font-weight: 600; font-size: .9rem; color: var(--grey-700); white-space: nowrap; }
+    .cms-select {
+      flex: 1; min-width: 220px; max-width: 400px;
+      padding: 10px 14px; font-family: inherit; font-size: .95rem;
+      border: 1.5px solid var(--grey-200); border-radius: var(--radius);
+      background: var(--white); color: var(--text);
+      cursor: pointer;
+    }
+    .cms-select:focus { outline: none; border-color: var(--purple); }
+
+    /* ── Fields ── */
+    .cms-fields { display: flex; flex-direction: column; gap: 18px; }
+    .cms-field { display: flex; flex-direction: column; gap: 6px; }
+    .cms-field label {
+      font-size: .82rem; font-weight: 700; color: var(--grey-700);
+      text-transform: uppercase; letter-spacing: .06em;
+    }
+    .cms-field input[type="text"],
+    .cms-field textarea {
+      font-family: inherit; font-size: .92rem; color: var(--text);
+      background: var(--off-white); border: 1.5px solid var(--grey-200);
+      border-radius: var(--radius); padding: 10px 14px;
+      transition: border-color .2s; width: 100%; resize: vertical;
+    }
+    .cms-field input[type="text"]:focus,
+    .cms-field textarea:focus { outline: none; border-color: var(--purple); background: var(--white); }
+    .cms-field textarea { min-height: 90px; }
+    .cms-field-hint { font-size: .76rem; color: var(--grey-500); margin-top: 2px; }
+
+    /* ── Buttons ── */
+    .cms-btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+    .cms-btn {
+      padding: 11px 24px; border-radius: 100px; font-family: inherit;
+      font-size: .9rem; font-weight: 700; cursor: pointer; border: 2px solid transparent;
+      transition: all .2s; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .cms-btn-primary { background: var(--purple); color: var(--white); border-color: var(--purple); }
+    .cms-btn-primary:hover { background: var(--purple-dark); border-color: var(--purple-dark); }
+    .cms-btn-outline { background: transparent; color: var(--purple); border-color: var(--purple); }
+    .cms-btn-outline:hover { background: var(--purple-light); }
+    .cms-btn-danger { background: transparent; color: #C62828; border-color: #C62828; }
+    .cms-btn-danger:hover { background: #FFEBEE; }
+    .cms-btn-lime { background: var(--lime); color: var(--purple-dark); border-color: var(--lime); }
+    .cms-btn-lime:hover { background: #b0c300; border-color: #b0c300; }
+    .cms-btn-sm { padding: 7px 16px; font-size: .8rem; }
+
+    /* ── Toast ── */
+    #cms-toast {
+      position: fixed; bottom: 32px; right: 32px; z-index: 9999;
+      background: var(--purple-dark); color: var(--white);
+      padding: 14px 22px; border-radius: var(--radius);
+      font-size: .9rem; font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0,0,0,.2);
+      transform: translateY(80px); opacity: 0;
+      transition: all .3s ease; pointer-events: none;
+    }
+    #cms-toast.show { transform: translateY(0); opacity: 1; }
+    #cms-toast.success { background: #2E7D32; }
+    #cms-toast.error { background: #C62828; }
+
+    /* ── Images Grid ── */
+    .img-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .img-card {
+      background: var(--white); border: 1px solid var(--grey-200);
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .img-card-thumb {
+      width: 100%; height: 140px; object-fit: cover; display: block;
+      background: var(--grey-100);
+    }
+    .img-card-body { padding: 12px; }
+    .img-card-label { font-size: .82rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .img-card-path { font-size: .72rem; color: var(--grey-500); margin-bottom: 10px; word-break: break-all; }
+    .img-card-actions { display: flex; gap: 8px; }
+    .img-card .cms-btn { padding: 6px 12px; font-size: .75rem; border-radius: 6px; }
+    .img-override-badge {
+      display: inline-block; background: var(--lime); color: var(--purple-dark);
+      font-size: .65rem; font-weight: 700; padding: 2px 8px; border-radius: 100px;
+      margin-bottom: 6px;
+    }
+
+    /* ── Add Page Form ── */
+    .add-page-form { display: flex; flex-direction: column; gap: 20px; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .add-page-form .cms-field input,
+    .add-page-form .cms-field textarea { background: var(--white); }
+    .page-preview-wrap {
+      background: var(--grey-100); border-radius: var(--radius);
+      padding: 16px; margin-top: 8px;
+    }
+    .page-preview-wrap iframe {
+      width: 100%; height: 500px; border: none; border-radius: 6px;
+      background: white;
+    }
+
+    /* ── Submissions ── */
+    .sub-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--grey-200); margin-bottom: 20px; }
+    .sub-tab {
+      padding: 10px 22px; font-family: inherit; font-size: .9rem; font-weight: 600;
+      color: var(--grey-500); background: none; border: none;
+      border-bottom: 3px solid transparent; margin-bottom: -2px;
+      cursor: pointer; transition: color .2s;
+    }
+    .sub-tab.active { color: var(--purple); border-bottom-color: var(--lime); }
+    .sub-tab:hover { color: var(--purple); }
+
+    .admin-table-wrap { overflow-x: auto; border-radius: var(--radius); }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: .85rem; min-width: 600px; }
+    .admin-table thead tr { background: var(--purple); }
+    .admin-table thead th { padding: 12px 14px; text-align: left; color: var(--white); font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+    .admin-table tbody tr { border-bottom: 1px solid var(--grey-100); }
+    .admin-table tbody tr:hover { background: var(--purple-light); }
+    .admin-table tbody td { padding: 11px 14px; color: var(--grey-700); vertical-align: top; line-height: 1.5; }
+    .td-msg { max-width: 220px; white-space: pre-wrap; word-break: break-word; }
+    .td-nowrap { white-space: nowrap; }
+    .t-empty { text-align: center; padding: 40px; color: var(--grey-500); font-style: italic; }
+    .t-loading { text-align: center; padding: 40px; color: var(--purple); }
+
+    /* ── Pages Manager ── */
+    .pages-list { display: flex; flex-direction: column; gap: 12px; }
+    .page-row {
+      background: var(--white); border: 1px solid var(--grey-200);
+      border-radius: var(--radius); padding: 16px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .page-row-info { flex: 1; min-width: 0; }
+    .page-row-title { font-weight: 700; font-size: .95rem; color: var(--text); }
+    .page-row-url { font-size: .78rem; color: var(--grey-500); margin-top: 2px; }
+    .page-row-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .page-custom-badge {
+      display: inline-block; background: #E3F2FD; color: #1565C0;
+      font-size: .65rem; font-weight: 700; padding: 2px 8px;
+      border-radius: 100px; margin-left: 8px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .cms-sidebar { width: 60px; }
+      .cms-logo-label, .cms-nav-btn span, .cms-sidebar-footer { display: none; }
+      .cms-nav-btn { justify-content: center; padding: 12px; }
+      .cms-main { margin-left: 60px; }
+      .form-row-2 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .cms-content { padding: 16px; }
+      .img-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="cms-wrap">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="cms-sidebar">
+    <div class="cms-logo">
+      <img src="/Logo Serving Society.png" alt="Logo" />
+      <div class="cms-logo-label">Admin CMS</div>
+    </div>
+    <nav class="cms-nav">
+      <button class="cms-nav-btn active" id="nav-content" onclick="showPanel('content')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 1 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <span>Page Content</span>
+      </button>
+      <button class="cms-nav-btn" id="nav-images" onclick="showPanel('images')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <span>Images</span>
+      </button>
+      <hr class="cms-nav-divider">
+      <button class="cms-nav-btn" id="nav-pages" onclick="showPanel('pages')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        <span>Add Page</span>
+      </button>
+      <hr class="cms-nav-divider">
+      <button class="cms-nav-btn" id="nav-submissions" onclick="showPanel('submissions')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Submissions</span>
+      </button>
+      <hr class="cms-nav-divider">
+      <button class="cms-nav-btn" id="nav-setup" onclick="showPanel('setup')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+        <span>DB Setup</span>
+      </button>
+    </nav>
+    <div class="cms-sidebar-footer">
+      <a href="/index.html" target="_blank" class="cms-site-link">View Site ↗</a>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <div class="cms-main">
+
+    <div class="cms-topbar">
+      <span class="cms-topbar-title" id="topbarTitle">Page Content Editor</span>
+      <span class="cms-badge-testing">Testing Mode — No Login Required</span>
+    </div>
+
+    <div class="cms-content">
+
+      <!-- ═══ PANEL: Content Editor ═══ -->
+      <div class="cms-panel active" id="panel-content">
+        <div class="cms-panel-heading">Page Content Editor</div>
+        <p class="cms-panel-sub">Select a page, edit its text, and save. Changes apply instantly when visitors load the page.</p>
+
+        <div class="page-selector-row">
+          <label for="pageSelect">Editing page:</label>
+          <select class="cms-select" id="pageSelect" onchange="loadPageFields()">
+            <option value="index">Home Page (index.html)</option>
+            <option value="about">About Us</option>
+            <optgroup label="Service Pages">
+              <option value="services/accommodation-tenancy">Accommodation / Tenancy</option>
+              <option value="services/life-stage-transition">Assist Life Stage, Transition</option>
+              <option value="services/daily-tasks-shared-living">Daily Tasks / Shared Living</option>
+              <option value="services/development-life-skills">Development Life Skills</option>
+              <option value="services/community-participation">Community Participation</option>
+              <option value="services/assist-personal-activities">Assist Personal Activities</option>
+              <option value="services/assist-travel-transport">Assist Travel / Transport</option>
+              <option value="services/innovative-community-participation">Innovative Community Participation</option>
+              <option value="services/household-tasks">Household Tasks</option>
+            </optgroup>
+          </select>
+          <a id="previewPageLink" href="/index.html" target="_blank" class="cms-btn cms-btn-outline cms-btn-sm">Preview ↗</a>
+        </div>
+
+        <div class="cms-card">
+          <div id="fieldsContainer">
+            <div class="t-loading">Loading fields…</div>
+          </div>
+          <div class="cms-btn-row">
+            <button class="cms-btn cms-btn-primary" onclick="saveContent()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Save Changes
+            </button>
+            <button class="cms-btn cms-btn-outline" onclick="resetPageContent()">Reset to Default</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ PANEL: Images ═══ -->
+      <div class="cms-panel" id="panel-images">
+        <div class="cms-panel-heading">Image Manager</div>
+        <p class="cms-panel-sub">Click <strong>Replace</strong> to upload a new image. Changes are stored locally and apply across all pages. Click <strong>Remove Override</strong> to revert to the original.</p>
+        <div class="img-grid" id="imgGrid">
+          <div class="t-loading">Loading images…</div>
+        </div>
+      </div>
+
+      <!-- ═══ PANEL: Add / Manage Pages ═══ -->
+      <div class="cms-panel" id="panel-pages">
+        <div class="cms-panel-heading">Add New Page</div>
+        <p class="cms-panel-sub">Fill out the form to generate a new service page. Download it and save it to the <code>services/</code> folder on the server.</p>
+
+        <div class="cms-card">
+          <div class="cms-card-title">New Page Details</div>
+          <div class="add-page-form">
+            <div class="form-row-2">
+              <div class="cms-field">
+                <label>Page Title</label>
+                <input type="text" id="np-title" placeholder="e.g. Supported Independent Living" />
+              </div>
+              <div class="cms-field">
+                <label>URL Slug</label>
+                <input type="text" id="np-slug" placeholder="e.g. supported-independent-living" />
+                <span class="cms-field-hint">File will be saved as <code>services/[slug].html</code></span>
+              </div>
+            </div>
+            <div class="cms-field">
+              <label>Short Description (for cards)</label>
+              <input type="text" id="np-short-desc" placeholder="One sentence shown on service cards" />
+            </div>
+            <div class="cms-field">
+              <label>Main Heading</label>
+              <input type="text" id="np-heading" placeholder="e.g. Supported Independent Living Support" />
+            </div>
+            <div class="cms-field">
+              <label>Intro Paragraph</label>
+              <textarea id="np-intro" rows="4" placeholder="Introductory paragraph about this service…"></textarea>
+            </div>
+            <div class="cms-field">
+              <label>Second Paragraph</label>
+              <textarea id="np-para2" rows="3" placeholder="Additional details…"></textarea>
+            </div>
+            <div class="cms-field">
+              <label>Support Checklist Items</label>
+              <textarea id="np-checklist" rows="6" placeholder="One item per line:&#10;Help with daily routines&#10;Personal care support&#10;Skill development"></textarea>
+              <span class="cms-field-hint">Enter one bullet point per line.</span>
+            </div>
+            <div class="cms-field">
+              <label>Image Path (optional)</label>
+              <input type="text" id="np-image" placeholder="/images/my-service-image.png" />
+            </div>
+          </div>
+          <div class="cms-btn-row">
+            <button class="cms-btn cms-btn-primary" onclick="generatePage()">Generate &amp; Download Page</button>
+            <button class="cms-btn cms-btn-outline" onclick="previewPage()">Preview in New Tab</button>
+          </div>
+        </div>
+
+        <div class="cms-card" style="margin-top:24px;">
+          <div class="cms-card-title">Custom Pages Created</div>
+          <div id="customPagesList"><div class="t-empty">No custom pages created yet.</div></div>
+        </div>
+      </div>
+
+      <!-- ═══ PANEL: Submissions ═══ -->
+      <div class="cms-panel" id="panel-submissions">
+        <div class="cms-panel-heading">Form Submissions</div>
+        <p class="cms-panel-sub">Contact enquiries and appointment requests submitted via the site forms.</p>
+
+        <div class="sub-tabs">
+          <button class="sub-tab active" id="subtab-contacts" onclick="switchSubTab('contacts')">Contact Enquiries <span id="contactCount"></span></button>
+          <button class="sub-tab" id="subtab-appointments" onclick="switchSubTab('appointments')">Appointment Requests <span id="apptCount"></span></button>
+        </div>
+
+        <div class="cms-card" id="panel-contacts-table">
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Service</th><th>Message</th></tr></thead>
+              <tbody id="contactsTbody"><tr><td colspan="6" class="t-loading">Connecting to Supabase…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="cms-card" id="panel-appts-table" style="display:none;">
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Method</th><th>Services</th><th>Pref. Date</th><th>Notes</th></tr></thead>
+              <tbody id="apptsTbody"><tr><td colspan="8" class="t-loading">Connecting to Supabase…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ PANEL: DB Setup ═══ -->
+      <div class="cms-panel" id="panel-setup">
+        <div class="cms-panel-heading">Supabase Database Setup</div>
+        <p class="cms-panel-sub">Follow these steps to connect the site to your Supabase project. You only need to do this once.</p>
+
+        <!-- Step 1: Credentials -->
+        <div class="cms-card">
+          <div class="cms-card-title">
+            <span style="background:var(--purple);color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0;">1</span>
+            Enter Your Supabase Credentials
+          </div>
+          <p style="font-size:.88rem;color:var(--grey-500);margin-bottom:16px;">Find these in your Supabase dashboard → Project Settings → API. Changes save to <code>supabase-config.js</code> — you'll need to paste them there manually.</p>
+          <div class="cms-fields" style="gap:12px;">
+            <div class="cms-field">
+              <label>Project URL</label>
+              <input type="text" id="setup-url" placeholder="https://xxxxxxxxxxxx.supabase.co" />
+            </div>
+            <div class="cms-field">
+              <label>Anon / Public Key</label>
+              <input type="text" id="setup-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+            </div>
+          </div>
+          <div class="cms-btn-row">
+            <button class="cms-btn cms-btn-primary" onclick="testConnection()">Test Connection</button>
+            <button class="cms-btn cms-btn-outline" onclick="copyConfigSnippet()">Copy Config Snippet</button>
+          </div>
+          <div id="connectionStatus" style="margin-top:12px;font-size:.88rem;display:none;"></div>
+        </div>
+
+        <!-- Step 2: SQL -->
+        <div class="cms-card">
+          <div class="cms-card-title">
+            <span style="background:var(--purple);color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0;">2</span>
+            Run the Database Schema SQL
+          </div>
+          <p style="font-size:.88rem;color:var(--grey-500);margin-bottom:16px;">Copy this SQL and paste it into your <a href="https://supabase.com/dashboard" target="_blank" style="color:var(--purple);">Supabase SQL Editor</a> → New Query → Run.</p>
+          <div style="position:relative;">
+            <pre id="sqlBlock" style="background:#1e1e2e;color:#cdd6f4;padding:20px;border-radius:8px;font-size:.78rem;line-height:1.6;overflow-x:auto;white-space:pre-wrap;max-height:360px;overflow-y:auto;"></pre>
+            <button class="cms-btn cms-btn-lime cms-btn-sm" onclick="copySQL()" style="position:absolute;top:10px;right:10px;">Copy SQL</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Tables check -->
+        <div class="cms-card">
+          <div class="cms-card-title">
+            <span style="background:var(--purple);color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0;">3</span>
+            Verify Tables Exist
+          </div>
+          <p style="font-size:.88rem;color:var(--grey-500);margin-bottom:16px;">After running the SQL, click below to confirm both tables are created and accessible.</p>
+          <button class="cms-btn cms-btn-primary" onclick="verifyTables()">Check Tables</button>
+          <div id="tableStatus" style="margin-top:16px;display:none;"></div>
+        </div>
+
+        <!-- Table structure reference -->
+        <div class="cms-card">
+          <div class="cms-card-title">Table Structure Reference</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+            <div>
+              <p style="font-weight:700;color:var(--purple);margin-bottom:10px;font-size:.9rem;">contacts</p>
+              <table style="width:100%;font-size:.78rem;border-collapse:collapse;">
+                <thead><tr style="background:var(--purple-light);">
+                  <th style="padding:6px 10px;text-align:left;color:var(--purple);">Column</th>
+                  <th style="padding:6px 10px;text-align:left;color:var(--purple);">Type</th>
+                </tr></thead>
+                <tbody>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">id</td><td style="padding:6px 10px;color:var(--grey-500);">UUID (PK)</td></tr>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">created_at</td><td style="padding:6px 10px;color:var(--grey-500);">TIMESTAMPTZ</td></tr>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">name</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">email</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">phone</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">service</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
+                  <tr><td style="padding:6px 10px;">message</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <p style="font-weight:700;color:var(--purple);margin-bottom:10px;font-size:.9rem;">appointments</p>
+              <table style="width:100%;font-size:.78rem;border-collapse:collapse;">
+                <thead><tr style="background:var(--purple-light);">
+                  <th style="padding:6px 10px;text-align:left;color:var(--purple);">Column</th>
+                  <th style="padding:6px 10px;text-align:left;color:var(--purple);">Type</th>
+                </tr></thead>
+                <tbody>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">id</td><td style="padding:6px 10px;color:var(--grey-500);">UUID (PK)</td></tr>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">created_at</td><td style="padding:6px 10px;color:var(--grey-500);">TIMESTAMPTZ</td></tr>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">first_name</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">last_name</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">email</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">phone</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">contact_method</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">services</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">preferred_date</td><td style="padding:6px 10px;color:var(--grey-500);">DATE</td></tr>
+                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">preferred_time</td><td style="padding:6px 10px;color:var(--grey-500);">TIME</td></tr>
+                  <tr><td style="padding:6px 10px;">notes</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /cms-content -->
+  </div><!-- /cms-main -->
+</div><!-- /cms-wrap -->
+
+<div id="cms-toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script>
+// ============================================================
+// CONTENT MAP — editable fields per page
+// ============================================================
+const PAGES = {
+  'index': {
+    label: 'Home Page', path: '/index.html',
+    fields: [
+      { id: 'hero-badge',     label: 'Hero Badge Text',      sel: '.hero-badge',                               type: 'text' },
+      { id: 'hero-title',     label: 'Hero Title',           sel: '.hero-title',                               type: 'textarea' },
+      { id: 'hero-subtitle',  label: 'Hero Subtitle',        sel: '.hero-subtitle',                            type: 'textarea' },
+      { id: 'about-tag',      label: 'About — Tag Label',    sel: '.about-split-content .section-tag',         type: 'text' },
+      { id: 'about-h2',       label: 'About — Heading',      sel: '.about-split-content h2',                   type: 'textarea' },
+      { id: 'about-p1',       label: 'About — Paragraph 1',  sel: '.about-split-content > p:first-of-type',    type: 'textarea' },
+      { id: 'about-p2',       label: 'About — Paragraph 2',  sel: '.about-split-content > p:nth-of-type(2)',   type: 'textarea' },
+      { id: 'svc-heading',    label: 'Services — Heading',   sel: '#services .section-title',                  type: 'text' },
+      { id: 'svc-subtitle',   label: 'Services — Subtitle',  sel: '#services .section-subtitle',               type: 'textarea' },
+      { id: 'callout-h2',     label: 'Callout — Heading',    sel: '.callout-text h2',                          type: 'textarea' },
+      { id: 'callout-p',      label: 'Callout — Text',       sel: '.callout-text p',                           type: 'textarea' },
+      { id: 'disclaimer',     label: 'NDIS Disclaimer',      sel: '.ndis-disclaimer',                          type: 'textarea' },
+      { id: 'footer-brand',   label: 'Footer Brand Text',    sel: '.footer-brand p',                           type: 'textarea' },
+    ]
+  },
+  'about': {
+    label: 'About Us', path: '/about.html',
+    fields: [
+      { id: 'banner',     label: 'Page Banner Title',        sel: '.page-banner-title',                        type: 'text' },
+      { id: 'about-tag',  label: 'Section Tag',              sel: '.about-hero-text .section-tag',             type: 'text' },
+      { id: 'about-h2',   label: 'Main Heading',             sel: '.about-hero-text h2',                       type: 'textarea' },
+      { id: 'about-p1',   label: 'Intro Paragraph 1',        sel: '.about-hero-text p:first-of-type',          type: 'textarea' },
+      { id: 'about-p2',   label: 'Intro Paragraph 2',        sel: '.about-hero-text p:nth-of-type(2)',         type: 'textarea' },
+    ]
+  },
+};
+
+// Generate service page fields dynamically
+const SERVICE_PAGES = [
+  ['services/accommodation-tenancy',          'Accommodation / Tenancy'],
+  ['services/life-stage-transition',          'Assist Life Stage, Transition'],
+  ['services/daily-tasks-shared-living',      'Daily Tasks / Shared Living'],
+  ['services/development-life-skills',        'Development Life Skills'],
+  ['services/community-participation',        'Community Participation'],
+  ['services/assist-personal-activities',     'Assist Personal Activities'],
+  ['services/assist-travel-transport',        'Assist Travel / Transport'],
+  ['services/innovative-community-participation', 'Innovative Community Participation'],
+  ['services/household-tasks',               'Household Tasks'],
+];
+
+SERVICE_PAGES.forEach(([key, label]) => {
+  PAGES[key] = {
+    label, path: '/' + key + '.html',
+    fields: [
+      { id: 'banner',  label: 'Page Banner Title', sel: '.page-banner-title',                       type: 'text' },
+      { id: 'main-h2', label: 'Main Heading',       sel: '.service-main-content h2',                 type: 'text' },
+      { id: 'intro',   label: 'Intro Paragraph 1',  sel: '.service-main-content > p:first-of-type',  type: 'textarea' },
+      { id: 'para2',   label: 'Intro Paragraph 2',  sel: '.service-main-content > p:nth-of-type(2)', type: 'textarea' },
+      { id: 'h3-support', label: '"Our Support Includes" heading', sel: '.service-main-content h3', type: 'text' },
+    ]
+  };
+});
+
+// ============================================================
+// IMAGES LIST
+// ============================================================
+const IMAGES = [
+  { path: '/images/hero-homepage.png',           label: 'Hero (Home)' },
+  { path: '/images/about-hero.png',              label: 'About Section Image' },
+  { path: '/images/contact-office.png',          label: 'Contact / Office' },
+  { path: '/images/accommodation-tenancy.png',   label: 'Accommodation & Tenancy' },
+  { path: '/images/life-stage-transition.png',   label: 'Life Stage Transition' },
+  { path: '/images/daily-tasks-shared-living.png', label: 'Daily Tasks / Shared Living' },
+  { path: '/images/development-life-skills.png', label: 'Development Life Skills' },
+  { path: '/images/community-participation.png', label: 'Community Participation' },
+  { path: '/images/assist-personal-activities.png', label: 'Assist Personal Activities' },
+  { path: '/images/assist-travel-transport.png', label: 'Assist Travel & Transport' },
+  { path: '/images/innovative-community.png',    label: 'Innovative Community Participation' },
+  { path: '/images/household-tasks.png',         label: 'Household Tasks' },
+  { path: '/Logo Serving Society.png',           label: 'Site Logo' },
+];
+
+// ============================================================
+// SIDEBAR NAVIGATION
+// ============================================================
+const PANEL_TITLES = {
+  content: 'Page Content Editor',
+  images: 'Image Manager',
+  pages: 'Add / Manage Pages',
+  submissions: 'Form Submissions',
+  setup: 'Supabase Database Setup',
+};
+
+function showPanel(name) {
+  document.querySelectorAll('.cms-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.cms-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  document.getElementById('topbarTitle').textContent = PANEL_TITLES[name];
+
+  if (name === 'images') renderImages();
+  if (name === 'pages') renderCustomPages();
+  if (name === 'submissions') loadSubmissions();
+  if (name === 'setup') initSetupPanel();
+}
+
+// ============================================================
+// CONTENT EDITOR
+// ============================================================
+let currentPageKey = 'index';
+let defaultValues = {};
+
+async function loadPageFields() {
+  currentPageKey = document.getElementById('pageSelect').value;
+  const page = PAGES[currentPageKey];
+  if (!page) return;
+
+  // Update preview link
+  document.getElementById('previewPageLink').href = page.path;
+
+  const container = document.getElementById('fieldsContainer');
+  container.innerHTML = '<div class="t-loading">Fetching page content…</div>';
+
+  // Fetch the live HTML to extract defaults
+  try {
+    const res = await fetch(page.path + '?nocache=' + Date.now());
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    defaultValues = {};
+    page.fields.forEach(f => {
+      const el = doc.querySelector(f.sel);
+      defaultValues[f.id] = el ? el.innerHTML.trim() : '';
+    });
+  } catch (e) {
+    defaultValues = {};
+  }
+
+  const saved = JSON.parse(localStorage.getItem('ss_content') || '{}');
+  const pageContent = saved[currentPageKey] || {};
+
+  container.innerHTML = '<div class="cms-fields">' + page.fields.map(f => {
+    const savedVal = pageContent[f.sel];
+    const val = savedVal !== undefined ? savedVal : (defaultValues[f.id] || '');
+    const hasOverride = savedVal !== undefined;
+    const inputId = 'field-' + f.id;
+
+    if (f.type === 'textarea') {
+      return `<div class="cms-field">
+        <label>${f.label}${hasOverride ? ' <span style="color:#2E7D32;font-size:.7rem;">● Edited</span>' : ''}</label>
+        <textarea id="${inputId}" rows="4">${escHtml(val)}</textarea>
+      </div>`;
+    }
+    return `<div class="cms-field">
+      <label>${f.label}${hasOverride ? ' <span style="color:#2E7D32;font-size:.7rem;">● Edited</span>' : ''}</label>
+      <input type="text" id="${inputId}" value="${escAttr(val)}" />
+    </div>`;
+  }).join('') + '</div>';
+}
+
+function saveContent() {
+  const page = PAGES[currentPageKey];
+  const saved = JSON.parse(localStorage.getItem('ss_content') || '{}');
+  const pageContent = {};
+  page.fields.forEach(f => {
+    const el = document.getElementById('field-' + f.id);
+    if (el) pageContent[f.sel] = el.value;
+  });
+  saved[currentPageKey] = pageContent;
+  localStorage.setItem('ss_content', JSON.stringify(saved));
+  showToast('Saved! Refresh the page to see changes.', 'success');
+  loadPageFields(); // refresh to show edited markers
+}
+
+function resetPageContent() {
+  if (!confirm('Reset all edits on this page back to the original file content?')) return;
+  const saved = JSON.parse(localStorage.getItem('ss_content') || '{}');
+  delete saved[currentPageKey];
+  localStorage.setItem('ss_content', JSON.stringify(saved));
+  loadPageFields();
+  showToast('Page reset to defaults.', 'success');
+}
+
+// ============================================================
+// IMAGE MANAGER
+// ============================================================
+function renderImages() {
+  const overrides = JSON.parse(localStorage.getItem('ss_images') || '{}');
+  const grid = document.getElementById('imgGrid');
+  grid.innerHTML = IMAGES.map(img => {
+    const hasOverride = !!overrides[img.path];
+    const src = hasOverride ? overrides[img.path] : img.path;
+    return `<div class="img-card" id="imgcard-${slugify(img.path)}">
+      <img class="img-card-thumb" src="${escAttr(src)}" alt="${escAttr(img.label)}" onerror="this.style.background='#eee';this.style.height='140px'" />
+      <div class="img-card-body">
+        ${hasOverride ? '<span class="img-override-badge">Custom Image</span>' : ''}
+        <div class="img-card-label">${escHtml(img.label)}</div>
+        <div class="img-card-path">${escHtml(img.path)}</div>
+        <div class="img-card-actions">
+          <label class="cms-btn cms-btn-primary cms-btn-sm" style="cursor:pointer;">
+            Replace
+            <input type="file" accept="image/*" style="display:none" onchange="replaceImage('${escAttr(img.path)}', this)" />
+          </label>
+          ${hasOverride ? `<button class="cms-btn cms-btn-danger cms-btn-sm" onclick="removeImageOverride('${escAttr(img.path)}')">Remove</button>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function replaceImage(path, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const overrides = JSON.parse(localStorage.getItem('ss_images') || '{}');
+    overrides[path] = e.target.result;
+    localStorage.setItem('ss_images', JSON.stringify(overrides));
+    renderImages();
+    showToast('Image replaced! Refresh site pages to see it.', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImageOverride(path) {
+  const overrides = JSON.parse(localStorage.getItem('ss_images') || '{}');
+  delete overrides[path];
+  localStorage.setItem('ss_images', JSON.stringify(overrides));
+  renderImages();
+  showToast('Image override removed.', 'success');
+}
+
+// ============================================================
+// ADD PAGE
+// ============================================================
+function getPageHTML(data) {
+  const checklistItems = (data.checklist || '')
+    .split('\n')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(s => `        <li>${escHtml(s)}</li>`)
+    .join('\n');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="${escAttr(data.shortDesc)} — Serving Society NDIS Support." />
+  <title>${escHtml(data.title)} | Serving Society</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 </head>
-<body class="admin-page">
+<body>
 
-  <!-- ===== NAVBAR ===== -->
   <nav class="navbar scrolled" id="navbar">
     <div class="nav-container">
-      <a href="/index.html" class="nav-logo">
-        <img src="/Logo Serving Society.png" alt="Serving Society Logo" class="logo-img" />
-      </a>
-      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
-        <span></span><span></span><span></span>
-      </button>
+      <a href="/index.html" class="nav-logo"><img src="/Logo Serving Society.png" alt="Serving Society Logo" class="logo-img" /></a>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
       <ul class="nav-links" id="navLinks">
         <li><a href="/index.html" class="nav-link">Home</a></li>
         <li><a href="/about.html" class="nav-link">About Us</a></li>
-        <li><a href="/appointment.html" class="nav-link nav-cta">Book Appointment</a></li>
+        <li class="nav-dropdown">
+          <a href="#" class="nav-link nav-link-dropdown active">Services <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" fill="none" stroke-width="1.5"/></svg></a>
+          <ul class="dropdown-menu">
+            <li><a href="/services/accommodation-tenancy.html">Accommodation / Tenancy</a></li>
+            <li><a href="/services/life-stage-transition.html">Assist Life Stage, Transition</a></li>
+            <li><a href="/services/daily-tasks-shared-living.html">Daily Tasks / Shared Living</a></li>
+            <li><a href="/services/development-life-skills.html">Development Life Skills</a></li>
+            <li><a href="/services/community-participation.html">Community Participation</a></li>
+            <li><a href="/services/assist-personal-activities.html">Assist Personal Activities</a></li>
+            <li><a href="/services/assist-travel-transport.html">Assist Travel / Transport</a></li>
+            <li><a href="/services/innovative-community-participation.html">Innovative Community Participation</a></li>
+            <li><a href="/services/household-tasks.html">Household Tasks</a></li>
+          </ul>
+        </li>
+        <li><a href="/appointment.html" class="nav-link">Appointment</a></li>
+        <li><a href="/index.html#contact" class="nav-link nav-cta">Get in Touch</a></li>
       </ul>
     </div>
   </nav>
 
-  <!-- ===== LOGIN VIEW ===== -->
-  <div class="admin-login-wrap" id="loginView">
-    <div class="admin-login-card">
-      <div class="admin-login-header">
-        <img src="/Logo Serving Society.png" alt="Serving Society" class="admin-login-logo" />
-        <h1>Admin Login</h1>
-        <p>Sign in to access the dashboard</p>
+  <section class="page-banner">
+    <div class="container"><h1 class="page-banner-title">${escHtml(data.title)}</h1></div>
+  </section>
+
+  <section class="container">
+    <div class="service-page-layout">
+      <div class="service-main-content reveal">
+        ${data.image ? `<img src="${escAttr(data.image)}" alt="${escAttr(data.title)}" class="service-hero-img" />` : ''}
+        <h2>${escHtml(data.heading || data.title)}</h2>
+        <p>${escHtml(data.intro)}</p>
+        ${data.para2 ? `<p>${escHtml(data.para2)}</p>` : ''}
+        ${checklistItems ? `<h3>Our Support Includes:</h3>\n      <ul class="support-checklist">\n${checklistItems}\n      </ul>` : ''}
+        <a href="/appointment.html" class="btn btn-primary" style="margin-top:16px;">Contact Now &rarr;</a>
       </div>
-      <div class="admin-login-body">
-        <div class="admin-error" id="loginError" style="display:none;"></div>
-        <div class="form-group">
-          <label for="adminEmail">Email Address</label>
-          <input type="email" id="adminEmail" placeholder="admin@servingsociety.com.au" autocomplete="email" />
+      <aside class="service-sidebar">
+        <nav class="sidebar-nav">
+          <h4>Other Services</h4>
+          <ul>
+            <li><a href="/services/accommodation-tenancy.html">Accommodation / Tenancy</a></li>
+            <li><a href="/services/life-stage-transition.html">Assist Life Stage, Transition</a></li>
+            <li><a href="/services/daily-tasks-shared-living.html">Daily Tasks / Shared Living</a></li>
+            <li><a href="/services/development-life-skills.html">Development Life Skills</a></li>
+            <li><a href="/services/community-participation.html">Community Participation</a></li>
+            <li><a href="/services/assist-personal-activities.html">Assist Personal Activities</a></li>
+            <li><a href="/services/assist-travel-transport.html">Assist Travel / Transport</a></li>
+            <li><a href="/services/innovative-community-participation.html">Innovative Community Participation</a></li>
+            <li><a href="/services/household-tasks.html">Household Tasks</a></li>
+          </ul>
+        </nav>
+        <div class="question-widget">
+          <h4>Have Any Question?</h4>
+          <p>Not sure where to start? Our friendly team is just a call or message away.</p>
+          <a href="tel:+61400000000" class="btn btn-primary">Call Now</a>
         </div>
-        <div class="form-group">
-          <label for="adminPassword">Password</label>
-          <input type="password" id="adminPassword" placeholder="••••••••" autocomplete="current-password" />
-        </div>
-        <button class="admin-sign-in-btn" id="signInBtn" onclick="handleSignIn()">
-          <span id="signInBtnText">Sign In</span>
-        </button>
-        <p class="admin-login-note">Access restricted to authorised administrators only.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- How To Book -->
+  <section class="how-to-book">
+    <div class="container">
+      <div class="section-header"><span class="section-tag">How To Book Our Services?</span><h2 class="section-title">Easy Ways To Get Serving Society Support</h2></div>
+      <div class="book-steps">
+        <div class="book-step reveal"><div class="book-step-number">01</div><h4>Call Us Directly</h4><p>Our friendly team is just a call away.</p><a href="tel:+61400000000" class="btn btn-primary">Call Now</a></div>
+        <div class="book-step reveal"><div class="book-step-number">02</div><h4>Email Us Anytime</h4><p>Send us an email and we'll get back to you promptly.</p><a href="mailto:info@servingsociety.com.au" class="btn btn-primary">Send an Email</a></div>
+        <div class="book-step reveal"><div class="book-step-number">03</div><h4>Fill Out Our Contact Form</h4><p>Submit our online form and we'll be in touch shortly.</p><a href="/index.html#contact" class="btn btn-primary">Submit Form</a></div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- ===== DASHBOARD VIEW ===== -->
-  <div class="admin-dashboard" id="dashboardView" style="display:none;">
-
-    <!-- Dashboard Header -->
-    <div class="admin-header">
-      <div class="admin-header-inner">
-        <div class="admin-header-left">
-          <h1 class="admin-title">Admin Dashboard</h1>
-          <span class="admin-badge admin-badge--live" id="connectionBadge">
-            <span class="admin-badge-dot"></span> Live
-          </span>
-        </div>
-        <div class="admin-header-right">
-          <span class="admin-user-label" id="adminUserLabel"></span>
-          <button class="admin-sign-out-btn" onclick="handleSignOut()">Sign Out</button>
-        </div>
+  <!-- Acknowledgement -->
+  <section class="acknowledgement">
+    <div class="container">
+      <h2>Acknowledgement Of Country</h2>
+      <p>We acknowledge the traditional custodians of this land and pay our respects to Elders past, present and future.</p>
+      <div class="flags">
+        <svg viewBox="0 0 80 40" width="80" height="40"><rect width="80" height="40" fill="#00008B"/><rect x="0" y="0" width="40" height="20" fill="#00008B"/><line x1="0" y1="0" x2="40" y2="20" stroke="white" stroke-width="2"/><line x1="40" y1="0" x2="0" y2="20" stroke="white" stroke-width="2"/><line x1="20" y1="0" x2="20" y2="20" stroke="white" stroke-width="3"/><line x1="0" y1="10" x2="40" y2="10" stroke="white" stroke-width="3"/></svg>
+        <svg viewBox="0 0 80 40" width="80" height="40"><rect width="80" height="20" fill="#000"/><rect y="20" width="80" height="20" fill="#CC0000"/><circle cx="40" cy="20" r="10" fill="#FFCD00"/></svg>
       </div>
     </div>
+  </section>
 
-    <div class="admin-content">
-
-      <!-- Stats Row -->
-      <div class="admin-stats" id="statsRow">
-        <div class="admin-stat-card">
-          <div class="admin-stat-number" id="statTotalContacts">—</div>
-          <div class="admin-stat-label">Total Contacts</div>
-        </div>
-        <div class="admin-stat-card">
-          <div class="admin-stat-number" id="statTotalAppointments">—</div>
-          <div class="admin-stat-label">Total Appointments</div>
-        </div>
-        <div class="admin-stat-card">
-          <div class="admin-stat-number" id="statTodaySubmissions">—</div>
-          <div class="admin-stat-label">Today's Submissions</div>
-        </div>
-        <div class="admin-stat-card">
-          <div class="admin-stat-number" id="statThisWeek">—</div>
-          <div class="admin-stat-label">This Week</div>
-        </div>
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-logo-row"><img src="/Logo Serving Society.png" alt="Serving Society" class="footer-logo" /></div>
+      <div class="footer-top">
+        <div class="footer-brand"><p>Person-centred NDIS support services delivered with compassion, dignity, and respect.</p><div class="footer-badge">NDIS Support Provider</div></div>
+        <div class="footer-links"><h4>Quick Links</h4><ul><li><a href="/about.html">About Us</a></li><li><a href="/appointment.html">Appointment</a></li><li><a href="/index.html#contact">Contact</a></li></ul></div>
+        <div class="footer-contact"><h4>Contact</h4><p><a href="tel:+61400000000">0400 000 000</a></p><p><a href="mailto:info@servingsociety.com.au">info@servingsociety.com.au</a></p></div>
       </div>
+      <p class="footer-disclaimer">Serving Society is currently in the process of NDIS registration. We provide services to self-managed and plan-managed participants.</p>
+      <div class="footer-bottom"><p>&copy; 2026 Serving Society. All rights reserved.</p></div>
+    </div>
+  </footer>
 
-      <!-- Tabs -->
-      <div class="admin-tabs-wrap">
-        <div class="admin-tabs">
-          <button class="admin-tab active" id="tabContacts" onclick="switchTab('contacts')">
-            Contact Enquiries
-            <span class="admin-tab-count" id="tabContactCount"></span>
-          </button>
-          <button class="admin-tab" id="tabAppointments" onclick="switchTab('appointments')">
-            Appointment Requests
-            <span class="admin-tab-count" id="tabApptCount"></span>
-          </button>
-        </div>
-        <button class="admin-refresh-btn" onclick="loadData()" title="Refresh data">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M23 4v6h-6M1 20v-6h6"/>
-            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-          </svg>
-          Refresh
-        </button>
+  <script src="/script.js"><\/script>
+  <script src="/content-loader.js"><\/script>
+</body>
+</html>`;
+}
+
+function getFormData() {
+  return {
+    title:     document.getElementById('np-title').value.trim(),
+    slug:      document.getElementById('np-slug').value.trim().replace(/[^a-z0-9-]/gi, '-').toLowerCase(),
+    shortDesc: document.getElementById('np-short-desc').value.trim(),
+    heading:   document.getElementById('np-heading').value.trim(),
+    intro:     document.getElementById('np-intro').value.trim(),
+    para2:     document.getElementById('np-para2').value.trim(),
+    checklist: document.getElementById('np-checklist').value.trim(),
+    image:     document.getElementById('np-image').value.trim(),
+  };
+}
+
+function generatePage() {
+  const data = getFormData();
+  if (!data.title || !data.slug) { showToast('Please fill in at least the Title and Slug.', 'error'); return; }
+  const html = getPageHTML(data);
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = data.slug + '.html'; a.click();
+  URL.revokeObjectURL(url);
+
+  // Save to custom pages list
+  const pages = JSON.parse(localStorage.getItem('ss_custom_pages') || '[]');
+  const exists = pages.findIndex(p => p.slug === data.slug);
+  const entry = { title: data.title, slug: data.slug, created: new Date().toLocaleDateString('en-AU') };
+  if (exists >= 0) pages[exists] = entry; else pages.push(entry);
+  localStorage.setItem('ss_custom_pages', JSON.stringify(pages));
+
+  renderCustomPages();
+  showToast('Page downloaded! Save it to services/' + data.slug + '.html', 'success');
+}
+
+function previewPage() {
+  const data = getFormData();
+  if (!data.title) { showToast('Please fill in at least the Title.', 'error'); return; }
+  const html = getPageHTML(data);
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+}
+
+function renderCustomPages() {
+  const pages = JSON.parse(localStorage.getItem('ss_custom_pages') || '[]');
+  const el = document.getElementById('customPagesList');
+  if (!pages.length) { el.innerHTML = '<div class="t-empty">No custom pages created yet.</div>'; return; }
+  el.innerHTML = '<div class="pages-list">' + pages.map(p => `
+    <div class="page-row">
+      <div class="page-row-info">
+        <div class="page-row-title">${escHtml(p.title)} <span class="page-custom-badge">Custom</span></div>
+        <div class="page-row-url">services/${escHtml(p.slug)}.html &nbsp;·&nbsp; Created ${p.created}</div>
       </div>
-
-      <!-- Contacts Table Panel -->
-      <div class="admin-panel" id="panelContacts">
-        <div class="admin-panel-header">
-          <h2>Contact Enquiries</h2>
-          <span class="admin-panel-subtitle">All messages submitted via the contact form, newest first.</span>
-        </div>
-        <div class="admin-table-wrap">
-          <table class="admin-table" id="contactsTable">
-            <thead>
-              <tr>
-                <th>Date &amp; Time</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Service</th>
-                <th>Message</th>
-              </tr>
-            </thead>
-            <tbody id="contactsTableBody">
-              <tr><td colspan="6" class="admin-empty-cell"><div class="admin-loading">Loading…</div></td></tr>
-            </tbody>
-          </table>
-        </div>
+      <div class="page-row-actions">
+        <button class="cms-btn cms-btn-danger cms-btn-sm" onclick="removeCustomPage('${escAttr(p.slug)}')">Remove</button>
       </div>
+    </div>`).join('') + '</div>';
+}
 
-      <!-- Appointments Table Panel -->
-      <div class="admin-panel" id="panelAppointments" style="display:none;">
-        <div class="admin-panel-header">
-          <h2>Appointment Requests</h2>
-          <span class="admin-panel-subtitle">All appointment requests submitted via the booking form, newest first.</span>
-        </div>
-        <div class="admin-table-wrap">
-          <table class="admin-table" id="appointmentsTable">
-            <thead>
-              <tr>
-                <th>Date &amp; Time</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Contact Method</th>
-                <th>Services</th>
-                <th>Preferred Date</th>
-                <th>Preferred Time</th>
-                <th>Notes</th>
-              </tr>
-            </thead>
-            <tbody id="appointmentsTableBody">
-              <tr><td colspan="9" class="admin-empty-cell"><div class="admin-loading">Loading…</div></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+function removeCustomPage(slug) {
+  let pages = JSON.parse(localStorage.getItem('ss_custom_pages') || '[]');
+  pages = pages.filter(p => p.slug !== slug);
+  localStorage.setItem('ss_custom_pages', JSON.stringify(pages));
+  renderCustomPages();
+}
 
-    </div><!-- /.admin-content -->
-  </div><!-- /.admin-dashboard -->
+// ============================================================
+// SUBMISSIONS (Supabase)
+// ============================================================
+let _supabase = null;
 
-  <script>
-    // ============================================================
-    // SUPABASE CONFIG — replace with your actual project values
-    // ============================================================
-    const SUPABASE_URL      = 'YOUR_SUPABASE_URL';
-    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+function initSupabase() {
+  if (_supabase) return true;
+  if (typeof supabase === 'undefined') return false;
+  const url = document.getElementById('setup-url')?.value.trim() || window.SUPABASE_URL || '';
+  const key = document.getElementById('setup-key')?.value.trim() || window.SUPABASE_ANON_KEY || '';
+  if (!url || url === 'YOUR_SUPABASE_URL') return false;
+  try { _supabase = supabase.createClient(url, key); return true; }
+  catch(e) { return false; }
+}
 
-    // ── Init client (after CDN script loads) ──
-    let _supabase;
+function isConfigured() {
+  const url = window.SUPABASE_URL || '';
+  return url && url !== 'YOUR_SUPABASE_URL';
+}
 
-    window.addEventListener('load', () => {
-      _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      initAdmin();
-    });
+async function loadSubmissions() {
+  if (!isConfigured() && !document.getElementById('setup-url')?.value.trim()) {
+    document.getElementById('contactsTbody').innerHTML =
+      '<tr><td colspan="6" class="t-empty">Supabase not configured. Go to <strong>DB Setup</strong> tab to connect.</td></tr>';
+    document.getElementById('apptsTbody').innerHTML =
+      '<tr><td colspan="8" class="t-empty">Supabase not configured. Go to <strong>DB Setup</strong> tab to connect.</td></tr>';
+    return;
+  }
+  if (!initSupabase()) {
+    document.getElementById('contactsTbody').innerHTML =
+      '<tr><td colspan="6" class="t-empty">Could not connect to Supabase. Check your credentials.</td></tr>';
+    return;
+  }
+  loadContacts();
+  loadAppointments();
+}
 
-    // ============================================================
-    // AUTH
-    // ============================================================
-    async function initAdmin() {
-      const { data: { session } } = await _supabase.auth.getSession();
-      if (session) {
-        showDashboard(session.user);
-      } else {
-        showLogin();
-      }
+// ============================================================
+// DB SETUP PANEL
+// ============================================================
+const SQL_SCHEMA = `-- SERVING SOCIETY — Supabase Schema
+-- Paste this into Supabase SQL Editor and click Run
 
-      // Listen for auth state changes
-      _supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          showDashboard(session.user);
-        } else if (event === 'SIGNED_OUT') {
-          showLogin();
-        }
-      });
+CREATE TABLE IF NOT EXISTS public.contacts (
+  id          UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at  TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  name        TEXT        NOT NULL,
+  email       TEXT        NOT NULL,
+  phone       TEXT,
+  service     TEXT,
+  message     TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.appointments (
+  id              UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at      TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  first_name      TEXT        NOT NULL,
+  last_name       TEXT        NOT NULL,
+  email           TEXT        NOT NULL,
+  phone           TEXT,
+  contact_method  TEXT,
+  services        TEXT,
+  preferred_date  DATE,
+  preferred_time  TIME,
+  notes           TEXT
+);
+
+ALTER TABLE public.contacts     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public insert on contacts"
+  ON public.contacts FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Allow authenticated read on contacts"
+  ON public.contacts FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow authenticated delete on contacts"
+  ON public.contacts FOR DELETE TO authenticated USING (true);
+
+CREATE POLICY "Allow public insert on appointments"
+  ON public.appointments FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Allow authenticated read on appointments"
+  ON public.appointments FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow authenticated delete on appointments"
+  ON public.appointments FOR DELETE TO authenticated USING (true);
+
+CREATE INDEX IF NOT EXISTS contacts_created_at_idx     ON public.contacts     (created_at DESC);
+CREATE INDEX IF NOT EXISTS appointments_created_at_idx ON public.appointments (created_at DESC);`;
+
+function initSetupPanel() {
+  document.getElementById('sqlBlock').textContent = SQL_SCHEMA;
+  // Pre-fill fields from window config
+  if (isConfigured()) {
+    document.getElementById('setup-url').value = window.SUPABASE_URL || '';
+    document.getElementById('setup-key').value = window.SUPABASE_ANON_KEY || '';
+  }
+}
+
+async function testConnection() {
+  const url = document.getElementById('setup-url').value.trim();
+  const key = document.getElementById('setup-key').value.trim();
+  const statusEl = document.getElementById('connectionStatus');
+  statusEl.style.display = 'block';
+  statusEl.innerHTML = '<span style="color:var(--purple);">Testing connection…</span>';
+
+  if (!url || !key) {
+    statusEl.innerHTML = '<span style="color:#C62828;">⚠ Please enter both URL and Anon Key.</span>';
+    return;
+  }
+  try {
+    const client = supabase.createClient(url, key);
+    // Lightweight ping — list tables
+    const { error } = await client.from('contacts').select('id').limit(1);
+    if (error && error.code !== 'PGRST116' && error.message.includes('relation') ) {
+      statusEl.innerHTML = `<span style="color:#E65100;">⚠ Connected but tables not found yet. Run the SQL in Step 2.</span>`;
+    } else if (error && error.message.toLowerCase().includes('invalid')) {
+      statusEl.innerHTML = `<span style="color:#C62828;">✗ Invalid credentials: ${escHtml(error.message)}</span>`;
+    } else {
+      _supabase = client; // store for submissions use
+      statusEl.innerHTML = '<span style="color:#2E7D32;">✓ Connection successful! Supabase is reachable.</span>';
     }
+  } catch(e) {
+    statusEl.innerHTML = `<span style="color:#C62828;">✗ Error: ${escHtml(e.message)}</span>`;
+  }
+}
 
-    function showLogin() {
-      document.getElementById('loginView').style.display = 'flex';
-      document.getElementById('dashboardView').style.display = 'none';
-    }
+async function verifyTables() {
+  const url = document.getElementById('setup-url').value.trim();
+  const key = document.getElementById('setup-key').value.trim();
+  const el = document.getElementById('tableStatus');
+  el.style.display = 'block';
+  el.innerHTML = '<span style="color:var(--purple);">Checking…</span>';
 
-    function showDashboard(user) {
-      document.getElementById('loginView').style.display = 'none';
-      document.getElementById('dashboardView').style.display = 'block';
-      document.getElementById('adminUserLabel').textContent = user.email || 'Admin';
-      loadData();
-    }
+  if (!url || !key) { el.innerHTML = '<span style="color:#C62828;">Enter credentials and test connection first.</span>'; return; }
 
-    async function handleSignIn() {
-      const email    = document.getElementById('adminEmail').value.trim();
-      const password = document.getElementById('adminPassword').value;
-      const errorEl  = document.getElementById('loginError');
-      const btn      = document.getElementById('signInBtn');
-      const btnText  = document.getElementById('signInBtnText');
+  try {
+    const client = supabase.createClient(url, key);
+    const [c, a] = await Promise.all([
+      client.from('contacts').select('id').limit(1),
+      client.from('appointments').select('id').limit(1),
+    ]);
+    const contactsOk = !c.error || c.error.code === 'PGRST116';
+    const apptsOk    = !a.error || a.error.code === 'PGRST116';
+    el.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:.88rem;">
+        <div>${contactsOk
+          ? '<span style="color:#2E7D32;font-weight:700;">✓ contacts</span> — table found'
+          : '<span style="color:#C62828;font-weight:700;">✗ contacts</span> — not found, run the SQL'}</div>
+        <div>${apptsOk
+          ? '<span style="color:#2E7D32;font-weight:700;">✓ appointments</span> — table found'
+          : '<span style="color:#C62828;font-weight:700;">✗ appointments</span> — not found, run the SQL'}</div>
+        ${contactsOk && apptsOk ? '<div style="margin-top:4px;color:#2E7D32;font-weight:700;">All tables ready. You can now view submissions.</div>' : ''}
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<span style="color:#C62828;">Error: ${escHtml(e.message)}</span>`;
+  }
+}
 
-      errorEl.style.display = 'none';
+function copySQL() {
+  navigator.clipboard.writeText(SQL_SCHEMA).then(() => showToast('SQL copied to clipboard!', 'success'));
+}
 
-      if (!email || !password) {
-        showLoginError('Please enter your email and password.');
-        return;
-      }
+function copyConfigSnippet() {
+  const url = document.getElementById('setup-url').value.trim();
+  const key = document.getElementById('setup-key').value.trim();
+  if (!url || !key) { showToast('Enter URL and Key first.', 'error'); return; }
+  const snippet = `window.SUPABASE_URL      = '${url}';\nwindow.SUPABASE_ANON_KEY = '${key}';`;
+  navigator.clipboard.writeText(snippet).then(() =>
+    showToast('Snippet copied! Paste into supabase-config.js', 'success')
+  );
+}
 
-      btnText.textContent = 'Signing in…';
-      btn.disabled = true;
+async function loadContacts() {
+  const tbody = document.getElementById('contactsTbody');
+  const { data, error } = await _supabase.from('contacts').select('*').order('created_at', { ascending: false });
+  if (error || !data) { tbody.innerHTML = `<tr><td colspan="6" class="t-empty">Error: ${escHtml(error?.message)}</td></tr>`; return; }
+  document.getElementById('contactCount').textContent = data.length ? ` (${data.length})` : '';
+  tbody.innerHTML = data.length ? data.map((r, i) => `<tr style="${i%2?'background:#fafafa':''}">
+    <td class="td-nowrap">${fmtDate(r.created_at)}</td>
+    <td><strong>${escHtml(r.name||'—')}</strong></td>
+    <td>${r.email ? `<a href="mailto:${escHtml(r.email)}">${escHtml(r.email)}</a>` : '—'}</td>
+    <td class="td-nowrap">${escHtml(r.phone||'—')}</td>
+    <td>${escHtml(r.service||'—')}</td>
+    <td class="td-msg">${escHtml(r.message||'—')}</td>
+  </tr>`).join('') : '<tr><td colspan="6" class="t-empty">No enquiries yet.</td></tr>';
+}
 
-      const { error } = await _supabase.auth.signInWithPassword({ email, password });
+async function loadAppointments() {
+  const tbody = document.getElementById('apptsTbody');
+  const { data, error } = await _supabase.from('appointments').select('*').order('created_at', { ascending: false });
+  if (error || !data) { tbody.innerHTML = `<tr><td colspan="8" class="t-empty">Error: ${escHtml(error?.message)}</td></tr>`; return; }
+  document.getElementById('apptCount').textContent = data.length ? ` (${data.length})` : '';
+  tbody.innerHTML = data.length ? data.map((r, i) => `<tr style="${i%2?'background:#fafafa':''}">
+    <td class="td-nowrap">${fmtDate(r.created_at)}</td>
+    <td><strong>${escHtml(((r.first_name||'') + ' ' + (r.last_name||'')).trim()||'—')}</strong></td>
+    <td>${r.email ? `<a href="mailto:${escHtml(r.email)}">${escHtml(r.email)}</a>` : '—'}</td>
+    <td class="td-nowrap">${escHtml(r.phone||'—')}</td>
+    <td>${escHtml(r.contact_method||'—')}</td>
+    <td class="td-msg">${escHtml(r.services||'—')}</td>
+    <td class="td-nowrap">${escHtml(r.preferred_date||'—')}</td>
+    <td class="td-msg">${escHtml(r.notes||'—')}</td>
+  </tr>`).join('') : '<tr><td colspan="8" class="t-empty">No appointments yet.</td></tr>';
+}
 
-      btn.disabled = false;
-      btnText.textContent = 'Sign In';
+function switchSubTab(tab) {
+  document.getElementById('subtab-contacts').classList.toggle('active', tab === 'contacts');
+  document.getElementById('subtab-appointments').classList.toggle('active', tab === 'appointments');
+  document.getElementById('panel-contacts-table').style.display = tab === 'contacts' ? 'block' : 'none';
+  document.getElementById('panel-appts-table').style.display   = tab === 'appointments' ? 'block' : 'none';
+}
 
-      if (error) {
-        showLoginError(error.message || 'Invalid credentials. Please try again.');
-      }
-    }
+// ============================================================
+// HELPERS
+// ============================================================
+function showToast(msg, type = '') {
+  const t = document.getElementById('cms-toast');
+  t.textContent = msg;
+  t.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = ''; }, 3200);
+}
 
-    function showLoginError(msg) {
-      const el = document.getElementById('loginError');
-      el.textContent = msg;
-      el.style.display = 'block';
-    }
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escAttr(s) {
+  return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function slugify(s) {
+  return s.replace(/[^a-z0-9]/gi, '-');
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-AU', { day:'2-digit', month:'short', year:'numeric' });
+}
 
-    async function handleSignOut() {
-      await _supabase.auth.signOut();
-    }
-
-    // Allow Enter key on login form
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && document.getElementById('loginView').style.display !== 'none') {
-        handleSignIn();
-      }
-    });
-
-    // ============================================================
-    // DATA LOADING
-    // ============================================================
-    let contactsData     = [];
-    let appointmentsData = [];
-
-    async function loadData() {
-      await Promise.all([loadContacts(), loadAppointments()]);
-      updateStats();
-    }
-
-    async function loadContacts() {
-      const tbody = document.getElementById('contactsTableBody');
-      tbody.innerHTML = '<tr><td colspan="6" class="admin-empty-cell"><div class="admin-loading">Loading…</div></td></tr>';
-
-      const { data, error } = await _supabase
-        .from('contacts')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        tbody.innerHTML = `<tr><td colspan="6" class="admin-empty-cell"><div class="admin-error-inline">Error: ${escHtml(error.message)}</div></td></tr>`;
-        return;
-      }
-
-      contactsData = data || [];
-      document.getElementById('tabContactCount').textContent = contactsData.length;
-
-      if (contactsData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="admin-empty-cell"><div class="admin-empty">No contact enquiries yet.</div></td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = contactsData.map((row, i) => `
-        <tr class="${i % 2 === 0 ? '' : 'admin-row-alt'}">
-          <td class="admin-td-nowrap">${formatDatetime(row.created_at)}</td>
-          <td><strong>${escHtml(row.name || '—')}</strong></td>
-          <td>${row.email ? `<a href="mailto:${escHtml(row.email)}" class="admin-link">${escHtml(row.email)}</a>` : '—'}</td>
-          <td class="admin-td-nowrap">${escHtml(row.phone || '—')}</td>
-          <td>${row.service ? `<span class="admin-badge admin-badge--service">${escHtml(row.service)}</span>` : '—'}</td>
-          <td class="admin-td-message">${escHtml(row.message || '—')}</td>
-        </tr>
-      `).join('');
-    }
-
-    async function loadAppointments() {
-      const tbody = document.getElementById('appointmentsTableBody');
-      tbody.innerHTML = '<tr><td colspan="9" class="admin-empty-cell"><div class="admin-loading">Loading…</div></td></tr>';
-
-      const { data, error } = await _supabase
-        .from('appointments')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        tbody.innerHTML = `<tr><td colspan="9" class="admin-empty-cell"><div class="admin-error-inline">Error: ${escHtml(error.message)}</div></td></tr>`;
-        return;
-      }
-
-      appointmentsData = data || [];
-      document.getElementById('tabApptCount').textContent = appointmentsData.length;
-
-      if (appointmentsData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="admin-empty-cell"><div class="admin-empty">No appointment requests yet.</div></td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = appointmentsData.map((row, i) => `
-        <tr class="${i % 2 === 0 ? '' : 'admin-row-alt'}">
-          <td class="admin-td-nowrap">${formatDatetime(row.created_at)}</td>
-          <td><strong>${escHtml((row.first_name || '') + ' ' + (row.last_name || '') || '—')}</strong></td>
-          <td>${row.email ? `<a href="mailto:${escHtml(row.email)}" class="admin-link">${escHtml(row.email)}</a>` : '—'}</td>
-          <td class="admin-td-nowrap">${escHtml(row.phone || '—')}</td>
-          <td>${row.contact_method ? `<span class="admin-badge admin-badge--method">${escHtml(row.contact_method)}</span>` : '—'}</td>
-          <td class="admin-td-message">${escHtml(row.services || '—')}</td>
-          <td class="admin-td-nowrap">${row.preferred_date ? formatDate(row.preferred_date) : '—'}</td>
-          <td class="admin-td-nowrap">${row.preferred_time ? formatTime(row.preferred_time) : '—'}</td>
-          <td class="admin-td-message">${escHtml(row.notes || '—')}</td>
-        </tr>
-      `).join('');
-    }
-
-    function updateStats() {
-      const today = new Date().toISOString().slice(0, 10);
-
-      const totalContacts     = contactsData.length;
-      const totalAppointments = appointmentsData.length;
-
-      const todayContacts = contactsData.filter(r => r.created_at && r.created_at.startsWith(today)).length;
-      const todayAppts    = appointmentsData.filter(r => r.created_at && r.created_at.startsWith(today)).length;
-      const todayTotal    = todayContacts + todayAppts;
-
-      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const weekContacts = contactsData.filter(r => r.created_at > weekAgo).length;
-      const weekAppts    = appointmentsData.filter(r => r.created_at > weekAgo).length;
-      const weekTotal    = weekContacts + weekAppts;
-
-      document.getElementById('statTotalContacts').textContent     = totalContacts;
-      document.getElementById('statTotalAppointments').textContent = totalAppointments;
-      document.getElementById('statTodaySubmissions').textContent  = todayTotal;
-      document.getElementById('statThisWeek').textContent          = weekTotal;
-    }
-
-    // ============================================================
-    // TABS
-    // ============================================================
-    let activeTab = 'contacts';
-
-    function switchTab(tab) {
-      activeTab = tab;
-
-      document.getElementById('tabContacts').classList.toggle('active', tab === 'contacts');
-      document.getElementById('tabAppointments').classList.toggle('active', tab === 'appointments');
-
-      document.getElementById('panelContacts').style.display     = tab === 'contacts'     ? 'block' : 'none';
-      document.getElementById('panelAppointments').style.display = tab === 'appointments' ? 'block' : 'none';
-    }
-
-    // ============================================================
-    // HELPERS
-    // ============================================================
-    function escHtml(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
-
-    function formatDatetime(iso) {
-      if (!iso) return '—';
-      const d = new Date(iso);
-      return d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })
-        + '<br><span class="admin-time">' + d.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) + '</span>';
-    }
-
-    function formatDate(dateStr) {
-      if (!dateStr) return '—';
-      const [y, m, d] = dateStr.split('-');
-      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
-    }
-
-    function formatTime(timeStr) {
-      if (!timeStr) return '—';
-      const [h, m] = timeStr.split(':');
-      const hour = parseInt(h);
-      const ampm = hour >= 12 ? 'PM' : 'AM';
-      const h12  = hour % 12 || 12;
-      return `${h12}:${m} ${ampm}`;
-    }
-
-    // Mobile nav toggle
-    const navToggle = document.getElementById('navToggle');
-    const navLinksEl = document.getElementById('navLinks');
-    navToggle.addEventListener('click', () => {
-      const open = navLinksEl.classList.toggle('open');
-      navToggle.setAttribute('aria-expanded', open);
-      const spans = navToggle.querySelectorAll('span');
-      if (open) {
-        spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
-        spans[1].style.opacity   = '0';
-        spans[2].style.transform = 'rotate(-45deg) translate(5px, -5px)';
-      } else {
-        spans.forEach(s => { s.style.transform = ''; s.style.opacity = ''; });
-      }
-    });
-  </script>
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', () => {
+  loadPageFields();
+});
+</script>
 
 </body>
 </html>

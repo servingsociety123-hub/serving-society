@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script src="/supabase-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <link rel="stylesheet" href="/style.css" />
 </head>
@@ -91,17 +92,17 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label for="apptDate">Preferred Appointment Date</label>
-            <input type="date" id="apptDate" name="date" />
+            <label for="preferredDate">Preferred Appointment Date</label>
+            <input type="date" id="preferredDate" name="preferredDate" />
           </div>
           <div class="form-group">
-            <label for="apptTime">Preferred Appointment Time</label>
-            <input type="time" id="apptTime" name="time" />
+            <label for="preferredTime">Preferred Appointment Time</label>
+            <input type="time" id="preferredTime" name="preferredTime" />
           </div>
         </div>
         <div class="form-group">
-          <label for="apptNotes">Additional Notes or Questions</label>
-          <textarea id="apptNotes" name="notes" rows="5" placeholder="Tell us anything else that might help us prepare for your appointment…"></textarea>
+          <label for="notes">Additional Notes or Questions</label>
+          <textarea id="notes" name="notes" rows="5" placeholder="Tell us anything else that might help us prepare for your appointment…"></textarea>
         </div>
         <button type="submit" class="btn btn-primary btn-full">Submit Appointment Request</button>
       </form>
@@ -143,5 +144,6 @@
   </footer>
 
   <script src="/script.js"></script>
+<script src="/content-loader.js"></script>
 </body>
 </html>

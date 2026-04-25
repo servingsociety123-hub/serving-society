@@ -2,18 +2,14 @@
    SERVING SOCIETY — Interactive JS
    ============================================================ */
 
-/* ── Supabase Config ──
-   Note: The Supabase CDN script is loaded in index.html and appointment.html
-   via: <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-   Replace the placeholder values below with your actual Supabase project credentials.
+/* ── Supabase Init ──
+   Credentials are set in supabase-config.js (loaded before this script).
+   Update window.SUPABASE_URL and window.SUPABASE_ANON_KEY there.
 */
-const SUPABASE_URL      = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
-
-// Initialise client and expose globally (runs after window load so CDN is ready)
 window.addEventListener('load', () => {
-  if (typeof supabase !== 'undefined') {
-    window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  if (typeof supabase !== 'undefined' &&
+      window.SUPABASE_URL && window.SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+    window._supabase = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
   }
 });
 
