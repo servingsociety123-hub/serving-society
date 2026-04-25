@@ -236,8 +236,23 @@
     .admin-table tbody td { padding: 11px 14px; color: var(--grey-700); vertical-align: top; line-height: 1.5; }
     .td-msg { max-width: 220px; white-space: pre-wrap; word-break: break-word; }
     .td-nowrap { white-space: nowrap; }
+    .td-actions { white-space: nowrap; }
     .t-empty { text-align: center; padding: 40px; color: var(--grey-500); font-style: italic; }
     .t-loading { text-align: center; padding: 40px; color: var(--purple); }
+    .action-btn {
+      padding: 4px 10px; border-radius: 6px; font-size: .75rem; font-weight: 700;
+      cursor: pointer; border: 1.5px solid transparent; font-family: inherit;
+      transition: all .15s; display: inline-block; margin: 2px 2px;
+    }
+    .action-btn-archive { background: #FFF8E1; color: #856404; border-color: #FFE082; }
+    .action-btn-archive:hover { background: #FFE082; }
+    .action-btn-unarchive { background: #E8F5E9; color: #2E7D32; border-color: #A5D6A7; }
+    .action-btn-unarchive:hover { background: #A5D6A7; }
+    .action-btn-delete { background: #FFEBEE; color: #C62828; border-color: #EF9A9A; }
+    .action-btn-delete:hover { background: #EF9A9A; }
+    .archived-badge { display:inline-block; background:#6A1B9A; color:#fff; font-size:.65rem; font-weight:700; padding:2px 7px; border-radius:100px; margin-left:6px; vertical-align:middle; }
+    .archived-row td { opacity: .6; }
+    .archive-view-indicator { display:inline-block; background:#6A1B9A; color:#fff; font-size:.72rem; font-weight:700; padding:3px 10px; border-radius:100px; margin-left:10px; vertical-align:middle; }
 
     /* ── Pages Manager ── */
     .pages-list { display: flex; flex-direction: column; gap: 12px; }
@@ -433,9 +448,15 @@
             <button class="sub-tab" id="subtab-appointments" onclick="switchSubTab('appointments')">Appointment Requests <span id="apptCount"></span></button>
           </div>
           <div class="export-btns" id="export-contacts-btns">
+            <button class="cms-btn cms-btn-sm" id="archiveToggleContacts"
+              style="background:#F3E5F5;color:#6A1B9A;border-color:#CE93D8;"
+              onclick="toggleArchiveView('contacts')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+              View Archived
+            </button>
             <button class="cms-btn cms-btn-lime cms-btn-sm" onclick="exportCSV('contacts')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Export Excel / CSV
+              Export CSV
             </button>
             <button class="cms-btn cms-btn-outline cms-btn-sm" onclick="exportPDF('contacts')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -443,9 +464,15 @@
             </button>
           </div>
           <div class="export-btns" id="export-appts-btns" style="display:none;">
+            <button class="cms-btn cms-btn-sm" id="archiveToggleAppts"
+              style="background:#F3E5F5;color:#6A1B9A;border-color:#CE93D8;"
+              onclick="toggleArchiveView('appointments')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+              View Archived
+            </button>
             <button class="cms-btn cms-btn-lime cms-btn-sm" onclick="exportCSV('appointments')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Export Excel / CSV
+              Export CSV
             </button>
             <button class="cms-btn cms-btn-outline cms-btn-sm" onclick="exportPDF('appointments')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -457,8 +484,8 @@
         <div class="cms-card" id="panel-contacts-table">
           <div class="admin-table-wrap">
             <table class="admin-table" id="contactsTable">
-              <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Service</th><th>Message</th></tr></thead>
-              <tbody id="contactsTbody"><tr><td colspan="6" class="t-loading">Connecting to Supabase…</td></tr></tbody>
+              <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Service</th><th>Message</th><th>Actions</th></tr></thead>
+              <tbody id="contactsTbody"><tr><td colspan="7" class="t-loading">Connecting to Supabase…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -466,8 +493,8 @@
         <div class="cms-card" id="panel-appts-table" style="display:none;">
           <div class="admin-table-wrap">
             <table class="admin-table" id="apptsTable">
-              <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Method</th><th>Services</th><th>Pref. Date</th><th>Notes</th></tr></thead>
-              <tbody id="apptsTbody"><tr><td colspan="8" class="t-loading">Connecting to Supabase…</td></tr></tbody>
+              <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Method</th><th>Services</th><th>Pref. Date</th><th>Notes</th><th>Actions</th></tr></thead>
+              <tbody id="apptsTbody"><tr><td colspan="9" class="t-loading">Connecting to Supabase…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -1145,36 +1172,59 @@ function copyConfigSnippet() {
   );
 }
 
+// showArchived['contacts'] / showArchived['appointments']
+const showArchived = { contacts: false, appointments: false };
+
 async function loadContacts() {
   const tbody = document.getElementById('contactsTbody');
-  const { data, error } = await _supabase.from('contacts').select('*').order('created_at', { ascending: false });
-  if (error || !data) { tbody.innerHTML = `<tr><td colspan="6" class="t-empty">Error: ${escHtml(error?.message)}</td></tr>`; return; }
+  tbody.innerHTML = `<tr><td colspan="7" class="t-loading">Loading…</td></tr>`;
+  const archived = showArchived['contacts'];
+  const { data, error } = await _supabase.from('contacts').select('*')
+    .eq('archived', archived).order('created_at', { ascending: false });
+  if (error || !data) { tbody.innerHTML = `<tr><td colspan="7" class="t-empty">Error: ${escHtml(error?.message)}</td></tr>`; return; }
   document.getElementById('contactCount').textContent = data.length ? ` (${data.length})` : '';
-  tbody.innerHTML = data.length ? data.map((r, i) => `<tr style="${i%2?'background:#fafafa':''}">
-    <td class="td-nowrap">${fmtDate(r.created_at)}</td>
-    <td><strong>${escHtml(r.name||'—')}</strong></td>
-    <td>${r.email ? `<a href="mailto:${escHtml(r.email)}">${escHtml(r.email)}</a>` : '—'}</td>
-    <td class="td-nowrap">${escHtml(r.phone||'—')}</td>
-    <td>${escHtml(r.service||'—')}</td>
-    <td class="td-msg">${escHtml(r.message||'—')}</td>
-  </tr>`).join('') : '<tr><td colspan="6" class="t-empty">No enquiries yet.</td></tr>';
+  tbody.innerHTML = data.length ? data.map((r, i) => `
+    <tr class="${r.archived ? 'archived-row' : ''}" style="${i%2?'background:#fafafa':''}">
+      <td class="td-nowrap">${fmtDate(r.created_at)}</td>
+      <td><strong>${escHtml(r.name||'—')}</strong>${r.archived ? '<span class="archived-badge">Archived</span>' : ''}</td>
+      <td>${r.email ? `<a href="mailto:${escHtml(r.email)}">${escHtml(r.email)}</a>` : '—'}</td>
+      <td class="td-nowrap">${escHtml(r.phone||'—')}</td>
+      <td>${escHtml(r.service||'—')}</td>
+      <td class="td-msg">${escHtml(r.message||'—')}</td>
+      <td class="td-actions">
+        ${r.archived
+          ? `<button class="action-btn action-btn-unarchive" onclick="unarchiveRow('contacts','${r.id}')">Unarchive</button>`
+          : `<button class="action-btn action-btn-archive" onclick="archiveRow('contacts','${r.id}')">Archive</button>`}
+        <button class="action-btn action-btn-delete" onclick="deleteRow('contacts','${r.id}')">Delete</button>
+      </td>
+    </tr>`).join('') : `<tr><td colspan="7" class="t-empty">${archived ? 'No archived enquiries.' : 'No enquiries yet.'}</td></tr>`;
 }
 
 async function loadAppointments() {
   const tbody = document.getElementById('apptsTbody');
-  const { data, error } = await _supabase.from('appointments').select('*').order('created_at', { ascending: false });
-  if (error || !data) { tbody.innerHTML = `<tr><td colspan="8" class="t-empty">Error: ${escHtml(error?.message)}</td></tr>`; return; }
+  tbody.innerHTML = `<tr><td colspan="9" class="t-loading">Loading…</td></tr>`;
+  const archived = showArchived['appointments'];
+  const { data, error } = await _supabase.from('appointments').select('*')
+    .eq('archived', archived).order('created_at', { ascending: false });
+  if (error || !data) { tbody.innerHTML = `<tr><td colspan="9" class="t-empty">Error: ${escHtml(error?.message)}</td></tr>`; return; }
   document.getElementById('apptCount').textContent = data.length ? ` (${data.length})` : '';
-  tbody.innerHTML = data.length ? data.map((r, i) => `<tr style="${i%2?'background:#fafafa':''}">
-    <td class="td-nowrap">${fmtDate(r.created_at)}</td>
-    <td><strong>${escHtml(((r.first_name||'') + ' ' + (r.last_name||'')).trim()||'—')}</strong></td>
-    <td>${r.email ? `<a href="mailto:${escHtml(r.email)}">${escHtml(r.email)}</a>` : '—'}</td>
-    <td class="td-nowrap">${escHtml(r.phone||'—')}</td>
-    <td>${escHtml(r.contact_method||'—')}</td>
-    <td class="td-msg">${escHtml(r.services||'—')}</td>
-    <td class="td-nowrap">${escHtml(r.preferred_date||'—')}</td>
-    <td class="td-msg">${escHtml(r.notes||'—')}</td>
-  </tr>`).join('') : '<tr><td colspan="8" class="t-empty">No appointments yet.</td></tr>';
+  tbody.innerHTML = data.length ? data.map((r, i) => `
+    <tr class="${r.archived ? 'archived-row' : ''}" style="${i%2?'background:#fafafa':''}">
+      <td class="td-nowrap">${fmtDate(r.created_at)}</td>
+      <td><strong>${escHtml(((r.first_name||'') + ' ' + (r.last_name||'')).trim()||'—')}</strong>${r.archived ? '<span class="archived-badge">Archived</span>' : ''}</td>
+      <td>${r.email ? `<a href="mailto:${escHtml(r.email)}">${escHtml(r.email)}</a>` : '—'}</td>
+      <td class="td-nowrap">${escHtml(r.phone||'—')}</td>
+      <td>${escHtml(r.contact_method||'—')}</td>
+      <td class="td-msg">${escHtml(r.services||'—')}</td>
+      <td class="td-nowrap">${escHtml(r.preferred_date||'—')}</td>
+      <td class="td-msg">${escHtml(r.notes||'—')}</td>
+      <td class="td-actions">
+        ${r.archived
+          ? `<button class="action-btn action-btn-unarchive" onclick="unarchiveRow('appointments','${r.id}')">Unarchive</button>`
+          : `<button class="action-btn action-btn-archive" onclick="archiveRow('appointments','${r.id}')">Archive</button>`}
+        <button class="action-btn action-btn-delete" onclick="deleteRow('appointments','${r.id}')">Delete</button>
+      </td>
+    </tr>`).join('') : `<tr><td colspan="9" class="t-empty">${archived ? 'No archived requests.' : 'No appointments yet.'}</td></tr>`;
 }
 
 function switchSubTab(tab) {
@@ -1184,6 +1234,42 @@ function switchSubTab(tab) {
   document.getElementById('panel-appts-table').style.display   = tab === 'appointments' ? 'block' : 'none';
   document.getElementById('export-contacts-btns').style.display = tab === 'contacts' ? 'flex' : 'none';
   document.getElementById('export-appts-btns').style.display   = tab === 'appointments' ? 'flex' : 'none';
+}
+
+function toggleArchiveView(type) {
+  showArchived[type] = !showArchived[type];
+  const btnId = type === 'contacts' ? 'archiveToggleContacts' : 'archiveToggleAppts';
+  const btn = document.getElementById(btnId);
+  if (showArchived[type]) {
+    btn.style.background = '#6A1B9A'; btn.style.color = '#fff'; btn.style.borderColor = '#6A1B9A';
+    btn.innerHTML = btn.innerHTML.replace('View Archived', 'View Active');
+  } else {
+    btn.style.background = '#F3E5F5'; btn.style.color = '#6A1B9A'; btn.style.borderColor = '#CE93D8';
+    btn.innerHTML = btn.innerHTML.replace('View Active', 'View Archived');
+  }
+  if (type === 'contacts') loadContacts(); else loadAppointments();
+}
+
+async function archiveRow(table, id) {
+  const { error } = await _supabase.from(table).update({ archived: true }).eq('id', id);
+  if (error) { showToast('Archive failed: ' + error.message, 'error'); return; }
+  showToast('Archived successfully.', 'success');
+  if (table === 'contacts') loadContacts(); else loadAppointments();
+}
+
+async function unarchiveRow(table, id) {
+  const { error } = await _supabase.from(table).update({ archived: false }).eq('id', id);
+  if (error) { showToast('Unarchive failed: ' + error.message, 'error'); return; }
+  showToast('Moved back to active.', 'success');
+  if (table === 'contacts') loadContacts(); else loadAppointments();
+}
+
+async function deleteRow(table, id) {
+  if (!confirm('Permanently delete this record? This cannot be undone.')) return;
+  const { error } = await _supabase.from(table).delete().eq('id', id);
+  if (error) { showToast('Delete failed: ' + error.message, 'error'); return; }
+  showToast('Record deleted.', 'success');
+  if (table === 'contacts') loadContacts(); else loadAppointments();
 }
 
 // ============================================================
