@@ -328,6 +328,7 @@
           <select class="cms-select" id="pageSelect" onchange="loadPageFields()">
             <option value="index">Home Page (index.html)</option>
             <option value="about">About Us</option>
+            <option value="appointment">Appointment</option>
             <optgroup label="Service Pages">
               <option value="services/accommodation-tenancy">Accommodation / Tenancy</option>
               <option value="services/life-stage-transition">Assist Life Stage, Transition</option>
@@ -583,6 +584,15 @@ const PAGES = {
       { id: 'footer-brand',   label: 'Footer Brand Text',    sel: '.footer-brand p',                           type: 'textarea' },
     ]
   },
+  'appointment': {
+    label: 'Appointment', path: '/appointment.html',
+    fields: [
+      { id: 'banner',    label: 'Page Banner Title',   sel: '.page-banner-title',          type: 'text' },
+      { id: 'appt-h2',   label: 'Info Box Heading',    sel: '.appointment-info h2',         type: 'textarea' },
+      { id: 'appt-tag',  label: 'Info Box Tag Label',  sel: '.appointment-info .section-tag', type: 'text' },
+      { id: 'appt-desc', label: 'Info Box Description',sel: '.appointment-info > p',        type: 'textarea' },
+    ]
+  },
   'about': {
     label: 'About Us', path: '/about.html',
     fields: [
@@ -637,6 +647,7 @@ const IMAGES = [
   { path: '/images/assist-travel-transport.png', label: 'Assist Travel & Transport' },
   { path: '/images/innovative-community.png',    label: 'Innovative Community Participation' },
   { path: '/images/household-tasks.png',         label: 'Household Tasks' },
+  { path: '/images/appointment.png',             label: 'Appointment Page Image' },
   { path: '/Logo Serving Society.png',           label: 'Site Logo' },
 ];
 
