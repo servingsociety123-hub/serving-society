@@ -356,7 +356,17 @@
       <!-- ═══ PANEL: Images ═══ -->
       <div class="cms-panel" id="panel-images">
         <div class="cms-panel-heading">Image Manager</div>
-        <p class="cms-panel-sub">Click <strong>Replace</strong> to upload a new image. Changes are stored locally and apply across all pages. Click <strong>Remove Override</strong> to revert to the original.</p>
+        <p class="cms-panel-sub">Click <strong>Replace</strong> to upload a new image — it is stored in <strong>Supabase Storage</strong> and applies across all pages and devices. Click <strong>Remove</strong> to revert to the original.</p>
+        <div style="background:#FFF8E1;border:1px solid #FFE082;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:.84rem;color:#5D4037;">
+          <strong>One-time setup required:</strong> In your Supabase dashboard → Storage, create a public bucket named <code>site-images</code>. Also run the SQL below once in the SQL Editor:<br/>
+          <code style="display:block;margin-top:8px;background:rgba(0,0,0,.06);padding:8px 12px;border-radius:6px;font-size:.8rem;white-space:pre-wrap;">CREATE TABLE IF NOT EXISTS public.image_overrides (
+  id            UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  original_path TEXT        NOT NULL UNIQUE,
+  storage_url   TEXT        NOT NULL,
+  updated_at    TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE public.image_overrides DISABLE ROW LEVEL SECURITY;</code>
+        </div>
         <div class="img-grid" id="imgGrid">
           <div class="t-loading">Loading images…</div>
         </div>
@@ -644,16 +654,29 @@ function resetPageContent() {
 }
 
 // ============================================================
-// IMAGE MANAGER
+// IMAGE MANAGER  (Supabase Storage + image_overrides table)
 // ============================================================
-function renderImages() {
-  const overrides = JSON.parse(localStorage.getItem('ss_images') || '{}');
+const STORAGE_BUCKET = 'site-images';
+
+async function renderImages() {
   const grid = document.getElementById('imgGrid');
+  grid.innerHTML = '<div class="t-loading">Loading images…</div>';
+
+  let overrides = {}; // original_path → storage_url
+  if (initSupabase()) {
+    const { data, error } = await _supabase
+      .from('image_overrides')
+      .select('original_path,storage_url');
+    if (data) data.forEach(r => { overrides[r.original_path] = r.storage_url; });
+    if (error) console.warn('image_overrides fetch error:', error.message);
+  }
+
   grid.innerHTML = IMAGES.map(img => {
     const hasOverride = !!overrides[img.path];
     const src = hasOverride ? overrides[img.path] : img.path;
     return `<div class="img-card" id="imgcard-${slugify(img.path)}">
-      <img class="img-card-thumb" src="${escAttr(src)}" alt="${escAttr(img.label)}" onerror="this.style.background='#eee';this.style.height='140px'" />
+      <img class="img-card-thumb" src="${escAttr(src)}" alt="${escAttr(img.label)}"
+           onerror="this.style.background='#eee';this.style.height='140px'" />
       <div class="img-card-body">
         ${hasOverride ? '<span class="img-override-badge">Custom Image</span>' : ''}
         <div class="img-card-label">${escHtml(img.label)}</div>
@@ -661,35 +684,79 @@ function renderImages() {
         <div class="img-card-actions">
           <label class="cms-btn cms-btn-primary cms-btn-sm" style="cursor:pointer;">
             Replace
-            <input type="file" accept="image/*" style="display:none" onchange="replaceImage('${escAttr(img.path)}', this)" />
+            <input type="file" accept="image/*" style="display:none"
+                   onchange="replaceImage('${escAttr(img.path)}', this)" />
           </label>
-          ${hasOverride ? `<button class="cms-btn cms-btn-danger cms-btn-sm" onclick="removeImageOverride('${escAttr(img.path)}')">Remove</button>` : ''}
+          ${hasOverride
+            ? `<button class="cms-btn cms-btn-danger cms-btn-sm"
+                onclick="removeImageOverride('${escAttr(img.path)}')">Remove</button>`
+            : ''}
         </div>
       </div>
     </div>`;
   }).join('');
 }
 
-function replaceImage(path, input) {
+async function replaceImage(path, input) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const overrides = JSON.parse(localStorage.getItem('ss_images') || '{}');
-    overrides[path] = e.target.result;
-    localStorage.setItem('ss_images', JSON.stringify(overrides));
-    renderImages();
-    showToast('Image replaced! Refresh site pages to see it.', 'success');
-  };
-  reader.readAsDataURL(file);
+
+  if (!initSupabase()) {
+    showToast('Supabase not connected. Check credentials.', 'error');
+    return;
+  }
+
+  showToast('Uploading image…');
+
+  // Storage path: strip leading slash, e.g. "images/hero-homepage.png"
+  const storagePath = path.replace(/^\//, '');
+
+  const { error: uploadError } = await _supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(storagePath, file, { upsert: true, contentType: file.type });
+
+  if (uploadError) {
+    showToast('Upload failed: ' + uploadError.message, 'error');
+    return;
+  }
+
+  const { data: urlData } = _supabase.storage
+    .from(STORAGE_BUCKET)
+    .getPublicUrl(storagePath);
+  const publicUrl = urlData.publicUrl;
+
+  // Upsert into image_overrides table
+  const { error: dbError } = await _supabase
+    .from('image_overrides')
+    .upsert({ original_path: path, storage_url: publicUrl }, { onConflict: 'original_path' });
+
+  if (dbError) {
+    showToast('Uploaded but failed to save record: ' + dbError.message, 'error');
+    return;
+  }
+
+  showToast('Image saved to Supabase!', 'success');
+  renderImages();
 }
 
-function removeImageOverride(path) {
-  const overrides = JSON.parse(localStorage.getItem('ss_images') || '{}');
-  delete overrides[path];
-  localStorage.setItem('ss_images', JSON.stringify(overrides));
-  renderImages();
+async function removeImageOverride(path) {
+  if (!initSupabase()) { showToast('Supabase not connected.', 'error'); return; }
+
+  const storagePath = path.replace(/^\//, '');
+
+  // Remove from storage
+  await _supabase.storage.from(STORAGE_BUCKET).remove([storagePath]);
+
+  // Remove from table
+  const { error } = await _supabase
+    .from('image_overrides')
+    .delete()
+    .eq('original_path', path);
+
+  if (error) { showToast('Remove failed: ' + error.message, 'error'); return; }
+
   showToast('Image override removed.', 'success');
+  renderImages();
 }
 
 // ============================================================
