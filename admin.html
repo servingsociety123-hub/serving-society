@@ -7,6 +7,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="/supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // ── Auth guard: redirect to login if not authenticated ──
+    (async function() {
+      const _sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+      const { data } = await _sb.auth.getSession();
+      if (!data.session) window.location.replace('/login.html');
+    })();
+  </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -58,11 +67,17 @@
       padding: 16px;
       border-top: 1px solid rgba(255,255,255,.1);
     }
+    .cms-user-info {
+      font-size: .72rem; color: rgba(255,255,255,.5);
+      text-align: center; margin-bottom: 10px;
+      word-break: break-all; line-height: 1.4;
+    }
+    .cms-user-info strong { display: block; color: rgba(255,255,255,.8); font-size: .76rem; margin-bottom: 2px; }
     .cms-site-link {
       display: block; text-align: center; padding: 10px;
       background: rgba(255,255,255,.1); border-radius: var(--radius);
       color: rgba(255,255,255,.8); font-size: .82rem; font-weight: 600;
-      transition: background .2s;
+      transition: background .2s; margin-bottom: 0;
     }
     .cms-site-link:hover { background: rgba(255,255,255,.2); color: #fff; }
 
@@ -316,7 +331,11 @@
       </button>
     </nav>
     <div class="cms-sidebar-footer">
-      <a href="/index.html" target="_blank" class="cms-site-link">View Site ↗</a>
+      <div class="cms-user-info" id="cmsUserInfo"></div>
+      <a href="/index.html" target="_blank" class="cms-site-link" style="margin-bottom:8px;">View Site ↗</a>
+      <button onclick="signOut()" class="cms-site-link" style="background:rgba(198,40,40,.15);color:#ff8a80;border:none;cursor:pointer;width:100%;font-family:inherit;font-size:.82rem;font-weight:600;padding:10px;border-radius:8px;text-align:center;">
+        Sign Out
+      </button>
     </div>
   </aside>
 
@@ -506,7 +525,6 @@
 
 <div id="cms-toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script>
@@ -1377,10 +1395,30 @@ function fmtDate(iso) {
 }
 
 // ============================================================
+// AUTH
+// ============================================================
+async function signOut() {
+  const sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+  await sb.auth.signOut();
+  window.location.replace('/login.html');
+}
+
+// ============================================================
 // INIT
 // ============================================================
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   loadPageFields();
+
+  // Show logged-in user email in sidebar
+  try {
+    const sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    const { data } = await sb.auth.getSession();
+    if (data.session) {
+      const email = data.session.user.email;
+      document.getElementById('cmsUserInfo').innerHTML =
+        `<strong>Signed in as</strong>${email}`;
+    }
+  } catch(e) {}
 });
 </script>
 
