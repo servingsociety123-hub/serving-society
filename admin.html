@@ -215,7 +215,9 @@
     }
 
     /* ── Submissions ── */
-    .sub-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--grey-200); margin-bottom: 20px; }
+    .sub-tabs-row { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px; border-bottom: 2px solid var(--grey-200); margin-bottom: 20px; }
+    .export-btns { display: flex; gap: 8px; padding-bottom: 4px; }
+    .sub-tabs { display: flex; gap: 0; }
     .sub-tab {
       padding: 10px 22px; font-family: inherit; font-size: .9rem; font-weight: 600;
       color: var(--grey-500); background: none; border: none;
@@ -425,14 +427,36 @@
         <div class="cms-panel-heading">Form Submissions</div>
         <p class="cms-panel-sub">Contact enquiries and appointment requests submitted via the site forms.</p>
 
-        <div class="sub-tabs">
-          <button class="sub-tab active" id="subtab-contacts" onclick="switchSubTab('contacts')">Contact Enquiries <span id="contactCount"></span></button>
-          <button class="sub-tab" id="subtab-appointments" onclick="switchSubTab('appointments')">Appointment Requests <span id="apptCount"></span></button>
+        <div class="sub-tabs-row">
+          <div class="sub-tabs">
+            <button class="sub-tab active" id="subtab-contacts" onclick="switchSubTab('contacts')">Contact Enquiries <span id="contactCount"></span></button>
+            <button class="sub-tab" id="subtab-appointments" onclick="switchSubTab('appointments')">Appointment Requests <span id="apptCount"></span></button>
+          </div>
+          <div class="export-btns" id="export-contacts-btns">
+            <button class="cms-btn cms-btn-lime cms-btn-sm" onclick="exportCSV('contacts')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Excel / CSV
+            </button>
+            <button class="cms-btn cms-btn-outline cms-btn-sm" onclick="exportPDF('contacts')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Export PDF
+            </button>
+          </div>
+          <div class="export-btns" id="export-appts-btns" style="display:none;">
+            <button class="cms-btn cms-btn-lime cms-btn-sm" onclick="exportCSV('appointments')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Excel / CSV
+            </button>
+            <button class="cms-btn cms-btn-outline cms-btn-sm" onclick="exportPDF('appointments')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Export PDF
+            </button>
+          </div>
         </div>
 
         <div class="cms-card" id="panel-contacts-table">
           <div class="admin-table-wrap">
-            <table class="admin-table">
+            <table class="admin-table" id="contactsTable">
               <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Service</th><th>Message</th></tr></thead>
               <tbody id="contactsTbody"><tr><td colspan="6" class="t-loading">Connecting to Supabase…</td></tr></tbody>
             </table>
@@ -441,7 +465,7 @@
 
         <div class="cms-card" id="panel-appts-table" style="display:none;">
           <div class="admin-table-wrap">
-            <table class="admin-table">
+            <table class="admin-table" id="apptsTable">
               <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Method</th><th>Services</th><th>Pref. Date</th><th>Notes</th></tr></thead>
               <tbody id="apptsTbody"><tr><td colspan="8" class="t-loading">Connecting to Supabase…</td></tr></tbody>
             </table>
@@ -456,6 +480,8 @@
 <div id="cms-toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script>
 // ============================================================
 // CONTENT MAP — editable fields per page
@@ -1156,6 +1182,87 @@ function switchSubTab(tab) {
   document.getElementById('subtab-appointments').classList.toggle('active', tab === 'appointments');
   document.getElementById('panel-contacts-table').style.display = tab === 'contacts' ? 'block' : 'none';
   document.getElementById('panel-appts-table').style.display   = tab === 'appointments' ? 'block' : 'none';
+  document.getElementById('export-contacts-btns').style.display = tab === 'contacts' ? 'flex' : 'none';
+  document.getElementById('export-appts-btns').style.display   = tab === 'appointments' ? 'flex' : 'none';
+}
+
+// ============================================================
+// EXPORT  (CSV / PDF)
+// ============================================================
+const EXPORT_CONFIG = {
+  contacts: {
+    tableId: 'contactsTable',
+    filename: 'contact-enquiries',
+    title: 'Serving Society — Contact Enquiries',
+    headers: ['Date','Name','Email','Phone','Service','Message'],
+    fields: ['created_at','name','email','phone','service','message'],
+  },
+  appointments: {
+    tableId: 'apptsTable',
+    filename: 'appointment-requests',
+    title: 'Serving Society — Appointment Requests',
+    headers: ['Date','First Name','Last Name','Email','Phone','Contact Method','Services','Pref. Date','Pref. Time','Notes'],
+    fields: ['created_at','first_name','last_name','email','phone','contact_method','services','preferred_date','preferred_time','notes'],
+  },
+};
+
+// Pull raw data from the already-loaded table DOM rows
+function getTableData(type) {
+  const cfg = EXPORT_CONFIG[type];
+  const table = document.getElementById(cfg.tableId);
+  const rows = [...table.querySelectorAll('tbody tr')];
+  if (!rows.length || rows[0].querySelector('.t-empty, .t-loading')) return [];
+  return rows.map(tr => [...tr.querySelectorAll('td')].map(td => td.textContent.trim()));
+}
+
+function exportCSV(type) {
+  const cfg = EXPORT_CONFIG[type];
+  const data = getTableData(type);
+  if (!data.length) { showToast('No data to export.', 'error'); return; }
+
+  const escape = v => '"' + String(v).replace(/"/g, '""') + '"';
+  const csv = [cfg.headers.map(escape).join(','),
+               ...data.map(row => row.map(escape).join(','))].join('\r\n');
+
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = cfg.filename + '-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV downloaded!', 'success');
+}
+
+function exportPDF(type) {
+  const cfg = EXPORT_CONFIG[type];
+  const data = getTableData(type);
+  if (!data.length) { showToast('No data to export.', 'error'); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+
+  // Header
+  doc.setFontSize(14);
+  doc.setTextColor(94, 45, 110); // --purple
+  doc.text(cfg.title, 40, 36);
+  doc.setFontSize(9);
+  doc.setTextColor(120, 120, 120);
+  doc.text('Exported: ' + new Date().toLocaleDateString('en-AU', { day:'2-digit', month:'long', year:'numeric' }), 40, 52);
+
+  doc.autoTable({
+    startY: 64,
+    head: [cfg.headers],
+    body: data,
+    headStyles: { fillColor: [94, 45, 110], textColor: 255, fontSize: 8, fontStyle: 'bold' },
+    bodyStyles: { fontSize: 8, textColor: 50 },
+    alternateRowStyles: { fillColor: [244, 236, 247] },
+    styles: { cellPadding: 5, overflow: 'linebreak' },
+    margin: { left: 40, right: 40 },
+  });
+
+  doc.save(cfg.filename + '-' + new Date().toISOString().slice(0,10) + '.pdf');
+  showToast('PDF downloaded!', 'success');
 }
 
 // ============================================================
