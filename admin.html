@@ -297,11 +297,6 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         <span>Submissions</span>
       </button>
-      <hr class="cms-nav-divider">
-      <button class="cms-nav-btn" id="nav-setup" onclick="showPanel('setup')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
-        <span>DB Setup</span>
-      </button>
     </nav>
     <div class="cms-sidebar-footer">
       <a href="/index.html" target="_blank" class="cms-site-link">View Site ↗</a>
@@ -453,107 +448,6 @@
         </div>
       </div>
 
-      <!-- ═══ PANEL: DB Setup ═══ -->
-      <div class="cms-panel" id="panel-setup">
-        <div class="cms-panel-heading">Supabase Database Setup</div>
-        <p class="cms-panel-sub">Follow these steps to connect the site to your Supabase project. You only need to do this once.</p>
-
-        <!-- Step 1: Credentials -->
-        <div class="cms-card">
-          <div class="cms-card-title">
-            <span style="background:var(--purple);color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0;">1</span>
-            Enter Your Supabase Credentials
-          </div>
-          <p style="font-size:.88rem;color:var(--grey-500);margin-bottom:16px;">Find these in your Supabase dashboard → Project Settings → API. Changes save to <code>supabase-config.js</code> — you'll need to paste them there manually.</p>
-          <div class="cms-fields" style="gap:12px;">
-            <div class="cms-field">
-              <label>Project URL</label>
-              <input type="text" id="setup-url" placeholder="https://xxxxxxxxxxxx.supabase.co" />
-            </div>
-            <div class="cms-field">
-              <label>Anon / Public Key</label>
-              <input type="text" id="setup-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
-            </div>
-          </div>
-          <div class="cms-btn-row">
-            <button class="cms-btn cms-btn-primary" onclick="testConnection()">Test Connection</button>
-            <button class="cms-btn cms-btn-outline" onclick="copyConfigSnippet()">Copy Config Snippet</button>
-          </div>
-          <div id="connectionStatus" style="margin-top:12px;font-size:.88rem;display:none;"></div>
-        </div>
-
-        <!-- Step 2: SQL -->
-        <div class="cms-card">
-          <div class="cms-card-title">
-            <span style="background:var(--purple);color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0;">2</span>
-            Run the Database Schema SQL
-          </div>
-          <p style="font-size:.88rem;color:var(--grey-500);margin-bottom:16px;">Copy this SQL and paste it into your <a href="https://supabase.com/dashboard" target="_blank" style="color:var(--purple);">Supabase SQL Editor</a> → New Query → Run.</p>
-          <div style="position:relative;">
-            <pre id="sqlBlock" style="background:#1e1e2e;color:#cdd6f4;padding:20px;border-radius:8px;font-size:.78rem;line-height:1.6;overflow-x:auto;white-space:pre-wrap;max-height:360px;overflow-y:auto;"></pre>
-            <button class="cms-btn cms-btn-lime cms-btn-sm" onclick="copySQL()" style="position:absolute;top:10px;right:10px;">Copy SQL</button>
-          </div>
-        </div>
-
-        <!-- Step 3: Tables check -->
-        <div class="cms-card">
-          <div class="cms-card-title">
-            <span style="background:var(--purple);color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0;">3</span>
-            Verify Tables Exist
-          </div>
-          <p style="font-size:.88rem;color:var(--grey-500);margin-bottom:16px;">After running the SQL, click below to confirm both tables are created and accessible.</p>
-          <button class="cms-btn cms-btn-primary" onclick="verifyTables()">Check Tables</button>
-          <div id="tableStatus" style="margin-top:16px;display:none;"></div>
-        </div>
-
-        <!-- Table structure reference -->
-        <div class="cms-card">
-          <div class="cms-card-title">Table Structure Reference</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-            <div>
-              <p style="font-weight:700;color:var(--purple);margin-bottom:10px;font-size:.9rem;">contacts</p>
-              <table style="width:100%;font-size:.78rem;border-collapse:collapse;">
-                <thead><tr style="background:var(--purple-light);">
-                  <th style="padding:6px 10px;text-align:left;color:var(--purple);">Column</th>
-                  <th style="padding:6px 10px;text-align:left;color:var(--purple);">Type</th>
-                </tr></thead>
-                <tbody>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">id</td><td style="padding:6px 10px;color:var(--grey-500);">UUID (PK)</td></tr>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">created_at</td><td style="padding:6px 10px;color:var(--grey-500);">TIMESTAMPTZ</td></tr>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">name</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">email</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">phone</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">service</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
-                  <tr><td style="padding:6px 10px;">message</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <div>
-              <p style="font-weight:700;color:var(--purple);margin-bottom:10px;font-size:.9rem;">appointments</p>
-              <table style="width:100%;font-size:.78rem;border-collapse:collapse;">
-                <thead><tr style="background:var(--purple-light);">
-                  <th style="padding:6px 10px;text-align:left;color:var(--purple);">Column</th>
-                  <th style="padding:6px 10px;text-align:left;color:var(--purple);">Type</th>
-                </tr></thead>
-                <tbody>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">id</td><td style="padding:6px 10px;color:var(--grey-500);">UUID (PK)</td></tr>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">created_at</td><td style="padding:6px 10px;color:var(--grey-500);">TIMESTAMPTZ</td></tr>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">first_name</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">last_name</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">email</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">phone</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">contact_method</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">services</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">preferred_date</td><td style="padding:6px 10px;color:var(--grey-500);">DATE</td></tr>
-                  <tr style="border-bottom:1px solid var(--grey-100);"><td style="padding:6px 10px;">preferred_time</td><td style="padding:6px 10px;color:var(--grey-500);">TIME</td></tr>
-                  <tr><td style="padding:6px 10px;">notes</td><td style="padding:6px 10px;color:var(--grey-500);">TEXT</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
     </div><!-- /cms-content -->
   </div><!-- /cms-main -->
 </div><!-- /cms-wrap -->
@@ -658,7 +552,6 @@ const PANEL_TITLES = {
   images: 'Image Manager',
   pages: 'Add / Manage Pages',
   submissions: 'Form Submissions',
-  setup: 'Supabase Database Setup',
 };
 
 function showPanel(name) {
@@ -671,7 +564,6 @@ function showPanel(name) {
   if (name === 'images') renderImages();
   if (name === 'pages') renderCustomPages();
   if (name === 'submissions') loadSubmissions();
-  if (name === 'setup') initSetupPanel();
 }
 
 // ============================================================
@@ -1037,7 +929,7 @@ async function loadSubmissions() {
 }
 
 // ============================================================
-// DB SETUP PANEL
+// DB SCHEMA (kept for reference only)
 // ============================================================
 const SQL_SCHEMA = `-- SERVING SOCIETY — Supabase Schema
 -- Paste this into Supabase SQL Editor and click Run
