@@ -286,21 +286,80 @@
       border-radius: 100px; margin-left: 8px;
     }
 
-    /* ── Responsive ── */
-    @media (max-width: 900px) {
-      .cms-sidebar { width: 60px; }
-      .cms-logo-label, .cms-nav-btn span, .cms-sidebar-footer { display: none; }
-      .cms-nav-btn { justify-content: center; padding: 12px; }
-      .cms-main { margin-left: 60px; }
-      .form-row-2 { grid-template-columns: 1fr; }
+    /* ── Mobile topbar hamburger ── */
+    .cms-mobile-topbar {
+      display: none;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      background: var(--purple-dark);
+      height: 56px; padding: 0 16px;
+      align-items: center; justify-content: space-between;
     }
-    @media (max-width: 600px) {
+    .cms-mobile-topbar img { height: 36px; background: #fff; border-radius: 6px; padding: 4px 8px; }
+    .cms-hamburger {
+      background: none; border: none; cursor: pointer;
+      display: flex; flex-direction: column; gap: 5px; padding: 6px;
+    }
+    .cms-hamburger span {
+      display: block; width: 22px; height: 2px;
+      background: #fff; border-radius: 2px;
+      transition: all .25s;
+    }
+    .cms-hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .cms-hamburger.open span:nth-child(2) { opacity: 0; }
+    .cms-hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+    /* Sidebar overlay on mobile */
+    .cms-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5);
+      z-index: 149;
+    }
+    .cms-overlay.show { display: block; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      /* Show mobile topbar, hide desktop sidebar by default */
+      .cms-mobile-topbar { display: flex; }
+      .cms-sidebar {
+        width: 260px;
+        transform: translateX(-100%);
+        transition: transform .28s ease;
+        top: 0; z-index: 150;
+      }
+      .cms-sidebar.open { transform: translateX(0); }
+      .cms-main { margin-left: 0; padding-top: 56px; }
+      .cms-topbar { display: none; }
       .cms-content { padding: 16px; }
+      .form-row-2 { grid-template-columns: 1fr; }
       .img-grid { grid-template-columns: 1fr 1fr; }
+      .sub-tabs-row { flex-direction: column; align-items: flex-start; }
+      .export-btns { flex-wrap: wrap; }
+      .sub-tab { padding: 10px 14px; font-size: .82rem; }
+      .cms-btn-row { flex-direction: column; }
+      .cms-btn-row .cms-btn { width: 100%; justify-content: center; }
+      .page-selector-row { flex-direction: column; align-items: flex-start; }
+      .cms-select { max-width: 100%; width: 100%; }
+    }
+    @media (max-width: 480px) {
+      .img-grid { grid-template-columns: 1fr; }
+      .cms-card { padding: 16px; }
+      .admin-table { font-size: .78rem; }
+      .admin-table thead th, .admin-table tbody td { padding: 8px 10px; }
+      .export-btns .cms-btn { font-size: .74rem; padding: 6px 10px; }
     }
   </style>
 </head>
 <body>
+
+<!-- Mobile topbar -->
+<div class="cms-mobile-topbar">
+  <img src="/Logo Serving Society.png" alt="Logo" />
+  <button class="cms-hamburger" id="cmsHamburger" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+</div>
+
+<!-- Sidebar overlay -->
+<div class="cms-overlay" id="cmsOverlay"></div>
 
 <div class="cms-wrap">
 
@@ -1403,9 +1462,38 @@ async function signOut() {
 }
 
 // ============================================================
+// MOBILE SIDEBAR TOGGLE
+// ============================================================
+function toggleMobileSidebar(forceClose) {
+  const sidebar  = document.querySelector('.cms-sidebar');
+  const hamburger = document.getElementById('cmsHamburger');
+  const overlay  = document.getElementById('cmsOverlay');
+  const isOpen   = sidebar.classList.contains('open');
+  if (forceClose || isOpen) {
+    sidebar.classList.remove('open');
+    hamburger.classList.remove('open');
+    overlay.classList.remove('show');
+  } else {
+    sidebar.classList.add('open');
+    hamburger.classList.add('open');
+    overlay.classList.add('show');
+  }
+}
+
+// ============================================================
 // INIT
 // ============================================================
 window.addEventListener('DOMContentLoaded', async () => {
+  // Mobile sidebar
+  document.getElementById('cmsHamburger').addEventListener('click', () => toggleMobileSidebar());
+  document.getElementById('cmsOverlay').addEventListener('click', () => toggleMobileSidebar(true));
+  // Close sidebar when a nav button is clicked on mobile
+  document.querySelectorAll('.cms-nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (window.innerWidth <= 768) toggleMobileSidebar(true);
+    });
+  });
+
   loadPageFields();
 
   // Show logged-in user email in sidebar
