@@ -956,7 +956,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .dropdown-menu {
   display: none;
   position: absolute;
-  top: calc(100% + 8px);
+  top: 100%;
   left: 50%;
   transform: translateX(-50%);
   background: var(--white);
@@ -966,7 +966,11 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   min-width: 300px;
   padding: 8px 0;
   z-index: 100;
+  /* invisible bridge fills any gap between button and menu */
+  margin-top: 0;
 }
+/* Padding on the nav item itself bridges any gap */
+.nav-dropdown { padding-bottom: 8px; margin-bottom: -8px; }
 .nav-dropdown:hover .dropdown-menu,
 .nav-dropdown.dropdown-open .dropdown-menu { display: block; }
 .dropdown-menu li a {
