@@ -86,6 +86,7 @@ revealEls.forEach(el => revealObserver.observe(el));
 /* ── Hero particle canvas ── */
 (function initParticles() {
   const container = document.getElementById('particles');
+  if (!container) return;
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   container.appendChild(canvas);
