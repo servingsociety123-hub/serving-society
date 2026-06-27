@@ -2346,3 +2346,60 @@ body.admin-page {
   .admin-login-body { padding: 24px; }
   .admin-login-header { padding: 28px 24px 20px; }
 }
+
+/* ===== REGISTERED NDIS PROVIDER HIGHLIGHT ===== */
+.ndis-registered {
+  padding: 56px 0;
+  background: var(--purple-light);
+}
+.ndis-registered-card {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
+  border-radius: var(--radius-lg);
+  padding: 40px 44px;
+  box-shadow: var(--shadow-lg);
+  color: var(--white);
+}
+.ndis-registered-icon {
+  flex-shrink: 0;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: rgba(198,218,2,.15);
+  border: 2px solid var(--lime);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ndis-registered-icon svg {
+  width: 44px;
+  height: 44px;
+  color: var(--lime);
+}
+.ndis-registered-tag {
+  display: inline-block;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--lime);
+  margin-bottom: 8px;
+}
+.ndis-registered-text h2 {
+  color: var(--white);
+  font-size: 1.7rem;
+  margin: 0 0 12px;
+}
+.ndis-registered-text h2 span { color: var(--lime); }
+.ndis-registered-text p {
+  color: rgba(255,255,255,.9);
+  margin: 0;
+  line-height: 1.65;
+}
+.ndis-registered-text p strong { color: var(--white); }
+@media (max-width: 768px) {
+  .ndis-registered-card { flex-direction: column; text-align: center; padding: 32px 24px; gap: 20px; }
+  .ndis-registered-text h2 { font-size: 1.4rem; }
+}
